@@ -34,10 +34,12 @@ impl<T: Field> InterpolateValue<T> {
         self.merkle_tree.leave_num()
     }
 
+    /// Merkle 树根的哈希值
     fn commit(&self) -> [u8; MERKLE_ROOT_SIZE] {
         self.merkle_tree.commit()
     }
 
+    /// 查询给定叶子节点索引的证明信息
     fn query(&self, leaf_indices: &Vec<usize>) -> QueryResult<T> {
         let len = self.merkle_tree.leave_num();
         let proof_values = leaf_indices
@@ -52,6 +54,7 @@ impl<T: Field> InterpolateValue<T> {
     }
 }
 
+/// 用于存储多项式在不同 coset 上的取值
 struct CosetInterpolate<T: Field> {
     interpolates: Vec<InterpolateValue<T>>,
 }
@@ -68,13 +71,17 @@ impl<T: Field> CosetInterpolate<T> {
                 .collect(),
         }
     }
+
+    /// 获得字段的大小
     fn field_size(&self) -> usize {
         self.interpolates[0].value.len()
     }
+
     fn from_interpolates(interpolates: Vec<InterpolateValue<T>>) -> Self {
         CosetInterpolate { interpolates }
     }
 
+    /// 获取指定索引的`InterpolateValue`实例
     fn get_interpolation(&self, index: usize) -> &InterpolateValue<T> {
         let len = self.interpolates.len();
         assert!((len & (len - 1)) == 0);
@@ -114,6 +121,7 @@ impl<T: Field> One2ManyProver<T> {
         }
     }
 
+    /// 提交函数的证明信息
     pub fn commit_functions(&self, verifiers: &Vec<Rc<RefCell<One2ManyVerifier<T>>>>) {
         for i in 0..self.total_round {
             for (idx, j) in verifiers.into_iter().enumerate() {
@@ -124,6 +132,7 @@ impl<T: Field> One2ManyProver<T> {
         }
     }
 
+    /// 提交折叠证明信息
     pub fn commit_foldings(&self, verifiers: &Vec<Rc<RefCell<One2ManyVerifier<T>>>>) {
         for i in 0..(self.total_round - 1) {
             for (idx, j) in verifiers.into_iter().enumerate() {
@@ -139,6 +148,7 @@ impl<T: Field> One2ManyProver<T> {
         }
     }
 
+    /// 根据当前轮数、滚动函数索引和挑战值，计算下一轮的评估值。
     fn evaluation_next_domain(
         &self,
         round: usize,
@@ -171,6 +181,7 @@ impl<T: Field> One2ManyProver<T> {
         res
     }
 
+    /// 根据给定的证明协议参数和数据，生成证明的各个部分，包括插值、折叠和最终值。
     pub fn prove(&mut self) {
         for i in 0..self.total_round {
             let challenge = self.oracle.folding_challenges[i];
@@ -193,6 +204,7 @@ impl<T: Field> One2ManyProver<T> {
         }
     }
 
+    /// 查询证明中的信息，包括插值和折叠部分的证明信息，以便供验证器验证。
     pub fn query(&self) -> (Vec<Vec<QueryResult<T>>>, Vec<Vec<QueryResult<T>>>) {
         let mut folding_res = vec![];
         let mut functions_res = vec![];

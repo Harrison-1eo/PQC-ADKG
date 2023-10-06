@@ -2,6 +2,9 @@ use super::Field;
 use core::arch::x86_64::_mulx_u64;
 use rand::Rng;
 
+/// GitHub Copilot: `Mersenne61Ext`结构体是一个表示扩展Mersenne素数的有限域上的元素的类型。
+/// 它是一个64位有符号整数的扩展类型，它的模数是一个Mersenne素数，即$2^{61}-1$。
+/// 这个类型实现了一些基本的算术运算，如加法、减法、乘法和逆元运算，以及一些其他的功能，如指数运算和随机元素生成。
 #[derive(Debug, Clone, Copy)]
 pub struct Mersenne61Ext {
     real: u64,

@@ -26,6 +26,7 @@ pub trait Field:
     fn is_zero(&self) -> bool;
     fn to_bytes(&self) -> Vec<u8>;
 
+    /// 获取一个扩展域的生成元，order 是生成元的阶
     fn get_generator(order: usize) -> Self {
         if (order & (order - 1)) != 0 || order > (1 << Self::LOG_ORDER) {
             panic!("invalid order");

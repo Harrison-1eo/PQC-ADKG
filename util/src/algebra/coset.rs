@@ -94,6 +94,10 @@ fn _fft<T: Field>(a: &mut Vec<T>, omega: T) {
 
 use std::{cell::RefCell, rc::Rc};
 
+/// GitHub Copilot: `Coset<T>`结构体是一个表示扩展域上的余元素的类型。
+/// 它包含了一个元素向量、一个元素逆向量、一个FFT评估域和一个移位值。
+/// 其中，元素向量和元素逆向量都是类型为`T`的元素向量，FFT评估域是一个`Radix2Domain<T>`类型的实例，移位值是类型为`T`的元素。
+/// 这个类型实现了一些基本的算术运算，如加法、减法、乘法和逆元运算，以及一些其他的功能，如指数运算和随机元素生成。
 #[derive(Debug, Clone)]
 pub struct Coset<T: Field> {
     elements: Rc<RefCell<Vec<T>>>,
@@ -202,6 +206,7 @@ impl<T: Field> Coset<T> {
         elements_inv.clone()
     }
 
+    /// 获取扩展域上的所有元素
     pub fn all_elements(&self) -> Vec<T> {
         let mut elements = self.elements.borrow_mut();
         if elements.len() == 0 {

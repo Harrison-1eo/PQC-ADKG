@@ -10,6 +10,7 @@ pub mod random_oracle;
 pub const CODE_RATE: usize = 3;
 pub const SECURITY_BITS: usize = 100;
 
+/// 将 `n` 分成若干个 2 的幂次，返回这些幂次的集合
 pub fn split_n(mut n: usize) -> Vec<usize> {
     let mut res = vec![];
     let mut i = 1;

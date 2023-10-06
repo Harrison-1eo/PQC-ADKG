@@ -36,6 +36,7 @@ fn avss_deal(log_n: usize, terminate_round: usize) {
 
     // folding_parameter 为折叠参数，`folding_parameter[i]` 为 `f` 在 `2^i` 次根的集合上的取值
     let x_shift = Mersenne61Ext::random_element();
+    // co
     let coset_x = Coset::new(1 << log_n, x_shift);
     let mut folding_parameter = vec![];
     let v = split_n((1 << log_t) - 1);
