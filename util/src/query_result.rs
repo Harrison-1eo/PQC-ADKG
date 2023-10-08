@@ -10,6 +10,8 @@ pub struct QueryResult<T: Field> {
 }
 
 impl<T: Field> QueryResult<T> {
+    /// `verify_merkle_tree` 用于验证默克尔树
+    /// 参数 `leaf_indices` 为叶子节点的索引，`merkle_verifier` 为对应的默克尔树的验证器
     pub fn verify_merkle_tree(
         &self,
         leaf_indices: &Vec<usize>,

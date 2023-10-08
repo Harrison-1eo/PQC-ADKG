@@ -14,12 +14,16 @@ use util::{
     random_oracle::RandomOracle,
 };
 
+
+/// 插值值，包含插值值和Merkle树
 struct InterpolateValue<T: Field> {
     value: Vec<T>,
     merkle_tree: MerkleTreeProver,
 }
 
 impl<T: Field> InterpolateValue<T> {
+    /// 创建一个 InterpolateValue 实例，其中包含了多项式在余元集合上的取值，以及对应的 Merkle 树。
+    /// value中的前半部分为多项式在余元集合上的取值，后半部分为多项式在余元集合上的取值的逆变换。
     fn new(value: Vec<T>) -> Self {
         let len = value.len() / 2;
         let merkle_tree = MerkleTreeProver::new(
@@ -30,20 +34,23 @@ impl<T: Field> InterpolateValue<T> {
         Self { value, merkle_tree }
     }
 
+    /// 多项式在余元集合上的取值的个数，实际上为 value 的长度的一半。
     fn leave_num(&self) -> usize {
         self.merkle_tree.leave_num()
     }
 
-    /// Merkle 树根的哈希值
+    /// 返回 Merkle 树根的哈希值
     fn commit(&self) -> [u8; MERKLE_ROOT_SIZE] {
         self.merkle_tree.commit()
     }
 
-    /// 查询给定叶子节点索引的证明信息
+    /// 查询指定索引的证明信息，包括证明的哈希值和证明的取值。
+    /// 返回值中的 proof_bytes 为需要证明的叶子结点的证明路径，proof_values 为证明的取值。
     fn query(&self, leaf_indices: &Vec<usize>) -> QueryResult<T> {
         let len = self.merkle_tree.leave_num();
         let proof_values = leaf_indices
             .iter()
+            // .map(|j| [(*j, self.value[*j]), (*j + len, self.value[*j + len])])
             .flat_map(|j| [(*j, self.value[*j]), (*j + len, self.value[*j + len])])
             .collect();
         let proof_bytes = self.merkle_tree.open(&leaf_indices);
@@ -54,7 +61,8 @@ impl<T: Field> InterpolateValue<T> {
     }
 }
 
-/// 用于存储多项式在不同 coset 上的取值
+
+/// 插值集合，是InterpolateValue的Vector
 struct CosetInterpolate<T: Field> {
     interpolates: Vec<InterpolateValue<T>>,
 }
@@ -63,6 +71,7 @@ impl<T: Field> CosetInterpolate<T> {
     fn len(&self) -> usize {
         self.interpolates.len()
     }
+
     fn new(functions: Vec<Vec<T>>) -> Self {
         CosetInterpolate {
             interpolates: functions
@@ -72,7 +81,7 @@ impl<T: Field> CosetInterpolate<T> {
         }
     }
 
-    /// 获得字段的大小
+    /// 返回插值集合中第一个 InterpolateValue 的 leave_num
     fn field_size(&self) -> usize {
         self.interpolates[0].value.len()
     }
@@ -81,14 +90,15 @@ impl<T: Field> CosetInterpolate<T> {
         CosetInterpolate { interpolates }
     }
 
-    /// 获取指定索引的`InterpolateValue`实例
+    /// 从集合中获取指定索引的`InterpolateValue`实例
     fn get_interpolation(&self, index: usize) -> &InterpolateValue<T> {
         let len = self.interpolates.len();
         assert!((len & (len - 1)) == 0);
-        &self.interpolates[index & (len - 1)]
+        &self.interpolates[index & (len - 1)]       // 由于len为2的幂，因此index & (len - 1) 等价于 index % len
     }
 }
 
+/// 一个证明者对多个验证者进行证明
 pub struct One2ManyProver<T: Field> {
     total_round: usize,
     interpolate_cosets: Vec<Coset<T>>,
@@ -99,6 +109,7 @@ pub struct One2ManyProver<T: Field> {
 }
 
 impl<T: Field> One2ManyProver<T> {
+    
     pub fn new(
         total_round: usize,
         interpolate_coset: &Vec<Coset<T>>,
@@ -106,6 +117,9 @@ impl<T: Field> One2ManyProver<T> {
         oracle: &RandomOracle<T>,
     ) -> One2ManyProver<T> {
         assert_eq!(total_round, functions.len());
+        // functions: Vec<CosetInterpolate<T>>，是参数中functions的每个元素转换成CosetInterpolate<T>的结果
+        // 每个CosetInterpolate中包含了多个InterpolateValue
+        // 每个InterpolateValue包含了多项式在余元集合上的取值，以及对应的Merkle树
         let functions: Vec<CosetInterpolate<T>> = functions
             .into_iter()
             .map(|x| CosetInterpolate::new(x))
@@ -121,7 +135,8 @@ impl<T: Field> One2ManyProver<T> {
         }
     }
 
-    /// 提交函数的证明信息
+    /// 函数需要 total_round * len(Verifiers) 个 InterpolateValue，其中每个InterpolateValue包含了多项式在余元集合上的取值，以及对应的Merkle树。
+    /// 向verifiers中的每个验证者的`function_root` 中添加total_round个默克尔树的验证器，用于验证多项式的根。
     pub fn commit_functions(&self, verifiers: &Vec<Rc<RefCell<One2ManyVerifier<T>>>>) {
         for i in 0..self.total_round {
             for (idx, j) in verifiers.into_iter().enumerate() {
@@ -132,7 +147,9 @@ impl<T: Field> One2ManyProver<T> {
         }
     }
 
-    /// 提交折叠证明信息
+    /// 前 total_round - 1 轮，向每个验证者的 `folding_root` 中添加 total_round - 1 个默克尔树的验证器，用于验证折叠的根。
+    /// 最后一轮，向每个验证者的 `final_value` 中添加一个多项式，用于验证最终值。
+    /// 函数中需要self.foldings中有(total_round - 1) * len(verifiers)个InterpolateValue
     pub fn commit_foldings(&self, verifiers: &Vec<Rc<RefCell<One2ManyVerifier<T>>>>) {
         for i in 0..(self.total_round - 1) {
             for (idx, j) in verifiers.into_iter().enumerate() {
@@ -149,6 +166,7 @@ impl<T: Field> One2ManyProver<T> {
     }
 
     /// 根据当前轮数、滚动函数索引和挑战值，计算下一轮的评估值。
+    /// res 的长度为 len / 2 
     fn evaluation_next_domain(
         &self,
         round: usize,
@@ -187,6 +205,7 @@ impl<T: Field> One2ManyProver<T> {
             let challenge = self.oracle.folding_challenges[i];
             if i < self.total_round - 1 {
                 let mut interpolates = vec![];
+                // 对于每个需要进行插值的函数，计算插值值，并将其添加到 interpolates 中
                 for j in 0..self.functions[i].len() {
                     let next_evalutation = self.evaluation_next_domain(i, j, challenge);
                     let interpolate_value = InterpolateValue::new(next_evalutation);
@@ -195,6 +214,7 @@ impl<T: Field> One2ManyProver<T> {
                 self.foldings
                     .push(CosetInterpolate::from_interpolates(interpolates));
             } else {
+                // 对于每个需要折叠的函数，计算折叠值，并将其添加到 interpolates 中
                 for j in 0..self.functions[i].len() {
                     let next_evalutation = self.evaluation_next_domain(i, j, challenge);
                     let coefficients = self.interpolate_cosets[i + 1].ifft(next_evalutation);

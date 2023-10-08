@@ -116,6 +116,7 @@ impl<T: Field> MultilinearPolynomial<T> {
         res
     }
 
+    /// 创建一个随机的多项式，其中包含 2 ^ variable_num 个变量
     pub fn random_polynomial(variable_num: usize) -> Self {
         MultilinearPolynomial {
             coefficients: (0..(1 << variable_num))

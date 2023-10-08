@@ -11,6 +11,7 @@ pub struct Dealer<T: Field> {
 }
 
 impl<T: Field + 'static> Dealer<T> {
+    
     /// 根据折叠参数和余元，对输入的值进行折叠操作，生成下一轮的值。
     fn fold(values: &Vec<T>, parameter: T, coset: &Coset<T>) -> Vec<T> {
         let len = values.len() / 2;
@@ -26,7 +27,7 @@ impl<T: Field + 'static> Dealer<T> {
         res
     }
 
-    /// `batch_folding` 为批量折叠函数，生成多轮的折叠值。
+    /// 
     fn batch_folding(
         total_round: usize,
         polynomial: &MultilinearPolynomial<T>,
