@@ -2,6 +2,5 @@
 members = [
     "util",
     "avss",
-    "gather",
-    "multi_user"
+    "multi_user",
 ]

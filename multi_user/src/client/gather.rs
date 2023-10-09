@@ -1,5 +1,6 @@
-use util::vec_check::{is_invector, is_subset};
-use super::super::server::message::{Message, GATHER_2, GATHER_3, GATHER_FIN};
+use util::vec_check::{is_invector, is_subset, is_equal};
+use crate::server::message::{Message};
+use crate::server::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
 
 use std::collections::HashMap;
 
@@ -30,6 +31,13 @@ impl GatherNode {
             others_s_set: HashMap::new(),
             fin: false,
         }
+    }
+
+    pub fn start(&self) -> Option<Message> {
+        if self.state == 0 {
+            return None
+        }
+        self.send_message(GATHER_1, vec![])
     }
 
     pub fn send_message(&self, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
@@ -106,5 +114,8 @@ impl GatherNode {
         }
     }
 
+    pub fn verify(&self, set_x: Vec<usize>) -> bool {
+        is_equal(&set_x, &self.set_s)
+    }
 
 }

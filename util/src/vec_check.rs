@@ -17,3 +17,24 @@ pub fn is_invector<T: PartialEq>(a: T, b: &Vec<T>) -> bool {
     }
     false
 }
+
+/// 检查两个Vector是否相等
+pub fn is_equal(a: &Vec<usize>, b: &Vec<usize>) -> bool {
+    let mut a_ = a.clone();
+    let mut b_ = b.clone();
+    // 排序后去除重复元素
+    a_.sort();
+    a_.dedup();
+    b_.sort();
+    b_.dedup();
+    
+    if a_.len() != b_.len() {
+        return false;
+    }
+    for i in 0..a_.len() {
+        if a_[i] != b_[i] {
+            return false;
+        }
+    }
+    true
+}

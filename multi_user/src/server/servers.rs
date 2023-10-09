@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::mpsc;
 use super::message::Message;
-use super::super::client::clients::Client;
+use crate::client::clients::Client;
 
 pub struct BroadcastServer {
     pub n: usize,

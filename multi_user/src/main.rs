@@ -6,8 +6,8 @@ use multi_user::server::servers::{BroadcastServer, UserThread};
 use multi_user::client::clients::Client;
 
 fn main() {
-    let n = 4; // 假设有4个线程
-
+    let n: usize = 4;      // 假设有4个线程
+    let f: usize = 1;        // 假设有1个拜占庭节点
     // 创建通道，用于线程向服务器发送消息
     let (tx_to_server, rx_to_server) = mpsc::channel();
 
@@ -19,7 +19,7 @@ fn main() {
         tx_to_threads: HashMap::new(),
     };
 
-    for i in 0..n {
+    for i in 0..(n-f) {
         let thread_id = i;
 
         let (tx_to_thread, rx_to_thread) = mpsc::channel();
@@ -31,6 +31,20 @@ fn main() {
             tx_to_server: tx_to_server.clone(),
             rx_from_server: rx_to_thread,
             client: Client::new(thread_id, 1, n, 1),
+        });
+    }
+    for i in (n-f)..n {
+        let thread_id = i;
+
+        let (tx_to_thread, rx_to_thread) = mpsc::channel();
+        // thread_senders.insert(thread_id, tx_to_thread);
+        server.tx_to_threads.insert(thread_id, tx_to_thread);
+
+        threads.push(UserThread {
+            thread_id,
+            tx_to_server: tx_to_server.clone(),
+            rx_from_server: rx_to_thread,
+            client: Client::new(thread_id, 0, n, 1),
         });
     }
 
@@ -48,31 +62,7 @@ fn main() {
         let mut user = threads.pop().unwrap();
         thread::spawn(move || {
             
-            // 随机生成若干个接收者
-            // let mut recv = Vec::new();
-            // let recv_num = rand::random::<usize>() % n;
-            // for _ in 0..recv_num {
-            //     if rand::random() {
-            //         recv.push(rand::random::<usize>() % n);
-            //     }
-            // }
-            // println!("Thread {} send message to {:?}", user.thread_id, recv);
-
-            // let msg = Message {
-            //     sender_id: user.thread_id,
-            //     receiver_id: recv,
-            //     msg_type: 0,
-            //     msg_content: vec![],
-            //     additional: String::from("Hello from thread"),
-            // };
             
-            // user.tx_to_server.send(msg).unwrap();
-
-            // while let Ok(msg) = user.rx_from_server.recv() {
-            //     println!("I'm thread {}", user.thread_id);
-            //     println!("{}", msg);
-            // }
-
             let msg = user.client.start();
             match msg {
                 Some(m) =>{ 
@@ -98,5 +88,5 @@ fn main() {
     }
 
     // 等待所有线程完成
-    thread::sleep(std::time::Duration::from_secs(2));
+    thread::sleep(std::time::Duration::from_secs(5));
 }
