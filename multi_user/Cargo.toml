@@ -1,0 +1,10 @@
+[package]
+name = "multi_user"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+util = { path = "../util" }
+gather = { path = "../gather" }
+rand = "0.8.5"

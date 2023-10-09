@@ -91,6 +91,7 @@ pub struct MultilinearPolynomial<T: Field> {
 }
 
 impl<T: Field> MultilinearPolynomial<T> {
+    /// 返回多项式的系数的集合的引用
     pub fn coefficients(&self) -> &Vec<T> {
         &self.coefficients
     }
@@ -125,6 +126,7 @@ impl<T: Field> MultilinearPolynomial<T> {
         }
     }
 
+    /// 计算多项式在给定点的值
     pub fn evaluate(&self, point: &Vec<T>) -> T {
         let len = self.coefficients.len();
         assert_eq!(1 << point.len(), self.coefficients.len());
@@ -147,6 +149,7 @@ impl<T: Field> MultilinearPolynomial<T> {
         res
     }
 
+    /// 返回多项式的变量的个数的log2
     pub fn variable_num(&self) -> usize {
         self.coefficients.len().ilog2() as usize
     }
@@ -179,12 +182,16 @@ mod test {
         let poly = MultilinearPolynomial::random_polynomial(8);
         let point = (0..8).map(|_| Mersenne61Ext::random_element()).collect();
         let v = poly.evaluate(&point);
+
+        println!("{:?} \n {:?} \n {:?}", poly, point, v);
+
         let mut folding_poly = poly.clone();
         for parameter in point {
             folding_poly = folding_poly.folding(parameter);
         }
         assert_eq!(folding_poly.coefficients.len(), 1);
         assert_eq!(folding_poly.coefficients[0], v);
+
         let z = Mersenne61Ext::random_element();
         let beta = Mersenne61Ext::random_element();
         let folding_poly = poly.folding(z);

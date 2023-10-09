@@ -39,6 +39,7 @@ impl<T: Field + 'static> Dealer<T> {
         let mut evaluations = vec![];
         for round in 0..total_round {
             let len = res[round].len();
+            
             if round < total_round - 1 {
                 let mut evaluations = vec![];
                 for (index, j) in folding_parameter[round].iter().enumerate() {
@@ -47,6 +48,7 @@ impl<T: Field + 'static> Dealer<T> {
                     evaluations.push(next_evaluation);
                 }
                 res.push(evaluations);
+            
             } else {
                 for (index, j) in folding_parameter[round].iter().enumerate() {
                     let next_evaluation =
@@ -60,7 +62,7 @@ impl<T: Field + 'static> Dealer<T> {
         (res, evaluations)
     }
 
-    /// `new` 创建一个 Dealer 实例，初始化协议参数，并使用折叠操作生成协议所需的多项式评估值。
+    /// 
     pub fn new(
         total_round: usize,
         polynomial: &MultilinearPolynomial<T>,
@@ -93,7 +95,7 @@ impl<T: Field + 'static> Dealer<T> {
         self.prover.commit_foldings(&verifiers);
     }
 
-    /// 将生成的多项式评估值发送给参与方，以供他们继续执行协议。
+    /// 
     pub fn send_evaluations(&self, avss_party: &mut Vec<AvssParty<T>>) {
         for i in 0..avss_party.len() {
             avss_party[i].set_share(&self.evaluations[i % self.evaluations.len()]);

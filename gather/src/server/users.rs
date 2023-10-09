@@ -15,13 +15,10 @@ pub struct Node {
     pub id: usize,
     pub msg: String,
     state: usize,                   // 0: adversary, 1: honest
-    set_r: Vec<(usize, String)>,
-    set_s: Vec<usize>,
-    set_t: Vec<usize>,
-    set_u: Vec<usize>,
+    
     n: usize,
     f: usize,
-    others_s_set: HashMap<usize, Vec<usize>>,
+    
     pub msg_queue: Vec<Message>,
 }
 
