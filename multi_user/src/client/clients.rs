@@ -1,5 +1,5 @@
 use super::vaba::VabaNode;
-use crate::server::message::{Message, self};
+use crate::server::message::Message;
 use crate::server::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
 use crate::server::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
 
@@ -25,20 +25,20 @@ impl Client {
         }
     }
 
-    pub fn start(&mut self) -> Option<Message> {
-        self.gather_start()
+    pub fn start(&mut self) -> Vec<Option<Message>> {
+        self.vaba_start()
     }
 
     pub fn end(&mut self){
         println!("Client {} end", self.id);
-        println!("find {} at max {}", self.vaba.fin.0, self.vaba.fin.1);
+        println!("find {} at max {}", self.vaba.res.0, self.vaba.res.1);
     }
 
     pub fn handle_message(&mut self, msg: Message) -> Option<Message> {
         if self.state == 0 {
             return None
         }
-        let mut message;
+        let message;
 
         if msg.msg_type == VABA_ATTACH {
             message = self.vaba.handle_attach(msg)
@@ -80,12 +80,16 @@ impl Client {
         self.vaba.gather.send_message(GATHER_1, vec![])
     }
 
-    pub fn vaba_start(&mut self) -> Option<Message> {
+    pub fn vaba_start(&mut self) -> Vec<Option<Message>> {
         // 作为 dealer 分三次调用 BingoShare 分享n个秘密
         // 对于其他参与者 j 发来的三次 BingoShare 请求都进行参与
 
         // 如果完成了某个参与者三次的BingoShare 请求
-        self.vaba.handle_start(1)
+        let mut m: Vec<Option<Message>> = vec![];
+        for i in 0..self.n {
+            m.push(self.vaba.handle_share_fin(i).clone())
+        }
+        m
     }
 
 }

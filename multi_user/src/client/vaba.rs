@@ -1,4 +1,4 @@
-use rand;
+use rand::Rng;
 use std::collections::HashMap;
 
 use util::vec_check::{is_invector, is_subset};
@@ -19,7 +19,8 @@ pub struct VabaNode {
     set_indice: Vec<usize>,
     set_fin: HashMap<usize, usize>,
     pub gather: GatherNode,
-    pub fin: (usize, usize),
+    pub res: (usize, usize),
+    fin: bool,
 }
 
 impl VabaNode {
@@ -29,14 +30,15 @@ impl VabaNode {
             id,
             state,
             f,
-            secret: (0..n).map(|_| rand::random::<usize>()).collect(),
+            secret: (0..n).map(|_| rand::thread_rng().gen_range(1..usize::MAX/n)).collect(),
             set_dealer: Vec::new(),
             set_attached: Vec::new(),
             set_sig: Vec::new(),
             set_indice: Vec::new(),
             set_fin: HashMap::new(),
             gather: GatherNode::new(id, n-f, state),
-            fin: (0, 0),
+            res: (0, 0),
+            fin: false,
         }
     }
 
@@ -56,7 +58,7 @@ impl VabaNode {
     /// 作为 Dealer 进行秘密分享，当完成其他参与者的 Share 过程时，将其添加到 set_dealer 中
     /// 当 set_dealer 中的参与者数量达到 f+1 时，将 set_dealer 赋值给 set_attached，并发送消息 <VABA_ATTACH>
     /// 这里进行模拟，表示参数 id 的参与者已经完成了 Share 过程，将其添加到 set_dealer 中
-    pub fn handle_start(&mut self, id: usize) -> Option<Message> {
+    pub fn handle_share_fin(&mut self, id: usize) -> Option<Message> {
         if is_invector(id, &self.set_dealer) {
             return None
         }
@@ -87,10 +89,12 @@ impl VabaNode {
         if msg.msg_content.len() == 0 || self.set_attached.len() == 0 {
             return None
         }
-        let number =  msg.additional.trim_end_matches(|c: char| !c.is_digit(10));
+        let number =  msg.additional.chars().rev().take_while(|c| c.is_digit(10))
+                                                    .collect::<String>().chars().rev()
+                                                    .collect::<String>().parse::<usize>();
 
-        if let Ok(number) = number.parse::<usize>() {
-            if number == self.id {
+        if let Ok(number) = number {
+            if number == msg.sender_id {
                 self.set_sig.push((msg.sender_id, msg));
             }
             else {
@@ -124,9 +128,9 @@ impl VabaNode {
             if msg.msg_content.contains(&self.id) {
                 // 调用 BingoReconstructSum 并输出结果
                 // 计算 self.secret 的和
-                let mut sum = 0;
+                let mut sum: usize = 0;
                 for i in 0..self.secret.len() {
-                    sum += self.secret[i];
+                    sum = sum.wrapping_add(self.secret[i].into());
                 }
                 return self.send_message(vec![], VABA_EVAL, vec![sum])
             }
@@ -137,19 +141,37 @@ impl VabaNode {
     /// 如果收到消息 <VABA_EVAL>，则将其添加到 set_fin 中
     /// 如果 set_indice 中的参与者都已经重构出秘密，则将 set_fin 中的最大值作为结果，通过消息 <VABA_FIN> 发送
     pub fn handle_eval(&mut self, msg: Message) -> Option<Message> {
+        if self.fin {
+            return None
+        }
         if self.set_indice.contains(&msg.sender_id){
-            if !self.set_fin.contains_key(&msg.sender_id){
-                let s = msg.msg_content[0];
-                if s > self.fin.1 {
-                    self.fin = (msg.sender_id, s);
-                }
+            self.set_fin.insert(msg.sender_id, msg.msg_content[0]);
+            let s = msg.msg_content[0];
+            if s > self.res.1 {
+                self.res = (msg.sender_id, s);
             }
         }
         if self.set_fin.len() == self.set_indice.len() {
-            return self.send_message(vec![], VABA_FIN, vec![self.fin.0, self.fin.1])
+            self.fin = true;
+            return self.send_message(vec![], VABA_FIN, vec![self.res.0, self.res.1]);
+            
         }
         None
     }
 
     
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn str_cat() {
+        let s = String::from("The set of dealer is [1412430, 2311], which is SIGNATURED by 07888");
+        // 提取出s字符串最后的数字
+        let last_num = s.chars().rev().take_while(|c| c.is_digit(10))
+                                .collect::<String>().chars().rev()
+                                .collect::<String>().parse::<i32>().unwrap();        
+        println!("{}", last_num);
+    }
 }

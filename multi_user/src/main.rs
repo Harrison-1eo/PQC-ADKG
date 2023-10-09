@@ -33,6 +33,7 @@ fn main() {
             client: Client::new(thread_id, 1, n, 1),
         });
     }
+
     for i in (n-f)..n {
         let thread_id = i;
 
@@ -55,21 +56,21 @@ fn main() {
         }
     });
 
-    
-
     // 创建n个线程执行用户操作
     for _ in 0..n {
         let mut user = threads.pop().unwrap();
         thread::spawn(move || {
             
             
-            let msg = user.client.start();
-            match msg {
-                Some(m) =>{ 
-                    println!("Thread {} send message to {:?}\n{}", user.thread_id, m.receiver_id, m);
-                    user.tx_to_server.send(m).unwrap()
+            let message = user.client.start();
+            for msg in message.into_iter(){
+                match msg {
+                    Some(m) =>{ 
+                        println!("Thread {} send message to {:?}\n{}", user.thread_id, m.receiver_id, m);
+                        user.tx_to_server.send(m).unwrap()
+                    }
+                    None => (),
                 }
-                None => (),
             }
 
             while let Ok(msg) = user.rx_from_server.recv() {
