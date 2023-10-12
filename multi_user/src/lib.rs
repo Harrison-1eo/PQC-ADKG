@@ -8,4 +8,5 @@ pub mod client{
     pub mod clients;
     pub mod vaba;
     pub mod adkg;
+    pub mod res;
 }
