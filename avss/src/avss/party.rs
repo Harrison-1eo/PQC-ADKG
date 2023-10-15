@@ -21,6 +21,19 @@ impl<T: Field + 'static> AvssParty<T> {
         poly.evaluate(&self.open_point[n - variable_num..].to_vec())
     }
 
+    pub fn interpolate_share(&self) -> (Vec<T>, T) {
+        let poly = self.final_poly.as_ref().unwrap();
+        let variable_num = poly.variable_num();
+        let n = self.open_point.len();
+        let opn = self.open_point[n - variable_num..].to_vec();
+        let eva = poly.evaluate(&opn);
+        (opn, eva)
+    }
+
+    pub fn all_share(&self) -> MultilinearPolynomial<T>  {
+        self.final_poly.as_ref().unwrap().clone()
+    }
+
     /// `set_share` 为设置参与方的秘密份额
     /// `final_poly` 为多项式 `f`，`f` 的次数为 `log_d`
     pub fn set_share(&mut self, final_poly: &MultilinearPolynomial<T>) {

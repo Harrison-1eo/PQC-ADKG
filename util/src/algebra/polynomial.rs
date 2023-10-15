@@ -155,6 +155,28 @@ impl<T: Field> MultilinearPolynomial<T> {
     }
 }
 
+impl<T: Field> MultilinearPolynomial<T> {
+
+    /// 插值多项式
+    pub fn interpolate(
+        evaluations: &Vec<Vec<T>>,
+        interpolate_coset: &Vec<Coset<T>>,
+    ) -> MultilinearPolynomial<T> {
+        let mut res = evaluations[0].clone();
+        let mut tmp = vec![];
+        for i in 1..evaluations.len() {
+            for j in 0..res.len() {
+                tmp.push(res[j] - evaluations[i][j]);
+            }
+            res = tmp;
+            tmp = vec![];
+        }
+        let mut res = interpolate_coset[0].ifft(res);
+        res.truncate(1 << interpolate_coset[0].size().ilog2());
+        MultilinearPolynomial::new(res)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::algebra::field::mersenne61_ext::Mersenne61Ext;
