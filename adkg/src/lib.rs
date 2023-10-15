@@ -10,3 +10,8 @@ pub mod client{
     pub mod adkg;
     pub mod res;
 }
+
+pub mod msg{
+    pub mod message;
+    pub mod result;
+}

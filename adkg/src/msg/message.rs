@@ -47,3 +47,7 @@ impl std::fmt::Display for Message {
                self.sender_id, receiver_id, self.msg_type, msg_content, self.additional)
     }
 }
+
+impl Message {
+    
+}
