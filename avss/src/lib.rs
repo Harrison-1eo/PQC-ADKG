@@ -18,7 +18,6 @@ use util::algebra::field::mersenne61_ext::Mersenne61Ext;
 use util::split_n;
 use util::{CODE_RATE, SECURITY_BITS};
 
-use rand::Rng; 
 
 pub fn avss_deal(log_n: usize, terminate_round: usize) {
     
@@ -195,42 +194,5 @@ pub fn avss_verify(log_n: usize, terminate_round: usize) {
     
     assert!(parties[0].verify(&folding0, &function0));
 
-    let mut shares = vec![];
-    for i in 0..(1 << (log_n * 2)) {
-        assert_eq!(parties[i].share(), polynomial.evaluate(&parties[i].open_point()));
-        println!("{}: open point: {:?}, share: [{}]", i, parties[i].interpolate_share().0, parties[i].interpolate_share().1);
-        shares.push(vec!(parties[i].interpolate_share().0[0], parties[i].interpolate_share().1));
-    }
 
-    // let a = 1 << log_d + 1;
-
-    // for i in 0..4 {
-    //     // 随机选取 a 个参与方
-    //     let mut selected_parties = vec![];
-    //     while true {
-    //         let s = rand::thread_rng().gen_range(0.. 1 << (log_n * 2));
-    //         if !selected_parties.contains(&s) {
-    //             selected_parties.push(s);
-    //         }
-    //         if selected_parties.len() == a {
-    //             break;
-    //         }
-    //     }
-    //     // 选取这 a 个参与方的秘密份额
-    //     let mut selected_shares = vec![];
-    //     for j in &selected_parties {
-    //         selected_shares.push(shares[*j].clone());
-    //     }
-    //     // 插值
-    //     let res = MultilinearPolynomial::interpolate(&selected_shares, &interpolate_cosets);
-    //     // 计算多项式在 0 处的值
-    //     let res0 = res.evaluate(&vec![Mersenne61Ext::from_int(0); log_d]);
-    //     println!("{}: {}", i, res0);
-    // }
-
-    for i in 0..(1 << (log_n * 2)) {
-        // println!("{}: {}, {}", i, parties[i].all_share().evaluate(&vec![Mersenne61Ext::from_int(0); log_d]), 
-        //                           parties[i].all_share().evaluate_as_polynomial(Mersenne61Ext::from_int(0)));
-        println!("{}: {}", i, parties[i].all_share().evaluate_as_polynomial(Mersenne61Ext::from_int(0)));
-    }
 }

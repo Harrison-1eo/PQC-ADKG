@@ -1,6 +1,6 @@
 use util::vec_check::{is_invector, is_subset, is_equal};
-use crate::server::message::{Message};
-use crate::server::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
+use crate::msg::message::{Message};
+use crate::msg::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
 
 use std::collections::HashMap;
 
@@ -19,10 +19,10 @@ pub struct GatherNode {
 }
 
 impl GatherNode {
-    pub fn new(id: usize, n_f: usize, state: usize) -> GatherNode {
+    pub fn new(id: usize, state: usize, n: usize, f: usize) -> GatherNode {
         GatherNode {
             id,
-            n_f,
+            n_f: n-f,
             state,
             set_r: Vec::new(),
             set_s: Vec::new(),

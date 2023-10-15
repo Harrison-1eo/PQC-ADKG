@@ -54,19 +54,10 @@ fn run(n: usize, f: usize) {
         let mut user = threads.pop().unwrap();
         thread::spawn(move || {
 
-            let message = user.client.start();
-            for msg in message.into_iter(){
-                match msg {
-                    Some(m) =>{ 
-                        println!("Thread {} send message to {:?}\n{}", user.thread_id, m.receiver_id, m);
-                        user.tx_to_server.send(m).unwrap()
-                    }
-                    None => (),
-                }
-            }
+            let message = user.client.start().unwrap();
+            user.tx_to_server.send(message).unwrap();
 
             while let Ok(msg) = user.rx_from_server.recv() {
-
                 let new_msg = user.client.handle_message(msg);
                 match new_msg {
                     Some(m) =>{ 

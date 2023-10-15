@@ -3,9 +3,9 @@ use sha256::digest;
 
 use util::vec_check::{is_invector, is_subset};
 use super::vaba::VabaNode;
-use super::res::Result;
-use crate::server::message::Message;
-use crate::server::message::{ADKG_PROP, ADKG_SIG};
+use crate::msg::result::Result;
+use crate::msg::message::Message;
+use crate::msg::message::{ADKG_PROP, ADKG_SIG};
 
 
 #[derive(Debug)]
@@ -135,7 +135,7 @@ impl AdkgNode {
 mod tests {
     use rand::Rng;
     use sha256::digest;
-    use super::super::res::Result;
+    use crate::msg::result::Result;
     
     fn sum_and_rec(id:usize, users:Vec<usize>) -> Option<Result> {
         // 对 self.id 做SHA256运算

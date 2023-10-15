@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::mpsc;
-use super::message::Message;
+use crate::msg::message::Message;
 use crate::client::clients::Client;
 
 pub struct BroadcastServer {
@@ -9,7 +9,7 @@ pub struct BroadcastServer {
     pub tx_to_threads: HashMap<usize, mpsc::Sender<Message>>,
 }
 
-pub struct UserThread {
+pub struct UserThread{
     pub thread_id: usize,
     pub tx_to_server: mpsc::Sender<Message>,
     pub rx_from_server: mpsc::Receiver<Message>,

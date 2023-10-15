@@ -1,5 +1,4 @@
 pub mod server{
-    pub mod message;
     pub mod servers;
 }
 
@@ -8,7 +7,7 @@ pub mod client{
     pub mod clients;
     pub mod vaba;
     pub mod adkg;
-    pub mod res;
+    pub mod avss;
 }
 
 pub mod msg{

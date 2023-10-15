@@ -1,16 +1,23 @@
 use super::vaba::VabaNode;
-use crate::server::message::Message;
-use crate::server::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
-use crate::server::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
+use super::gather::GatherNode;
+use super::adkg::AdkgNode;
+use super::avss::AvssNode;
+use crate::msg::message::Message;
+use crate::msg::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
+use crate::msg::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
+use crate::msg::message::{ADKG_PROP, ADKG_SIG};
 
 
-pub struct Client {
+pub struct Client{
     pub id: usize,
     pub state: usize,
     pub n: usize,
     pub f: usize,
     pub additional_data: String,
+    gather: GatherNode,
     vaba: VabaNode,
+    adkg: AdkgNode,
+    avss: AvssNode,
 }
 
 impl Client {
@@ -21,17 +28,15 @@ impl Client {
             n,
             f,
             additional_data: String::new(),
+            gather: GatherNode::new(id, state, n, f),
             vaba: VabaNode::new(id, state, n, f),
+            adkg: AdkgNode::new(id, state, n, f),
+            avss: AvssNode::new(id, 3, 1),
         }
     }
 
-    pub fn start(&mut self) -> Vec<Option<Message>> {
-        self.vaba_start()
-    }
-
-    pub fn end(&mut self){
-        println!("Client {} end", self.id);
-        println!("find {} at max {}", self.vaba.res.0, self.vaba.res.1);
+    pub fn start(&mut self) -> Option<Message> {
+        self.avss.send_and_verify()
     }
 
     pub fn handle_message(&mut self, msg: Message) -> Option<Message> {
@@ -71,6 +76,11 @@ impl Client {
             },
             None => None,
         }
+    }
+
+    pub fn end(&mut self){
+        println!("Client {} end", self.id);
+        println!("find {} at max {}", self.vaba.res.0, self.vaba.res.1);
     }
 
     pub fn gather_start(&self) -> Option<Message> {

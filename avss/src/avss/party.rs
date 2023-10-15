@@ -21,13 +21,13 @@ impl<T: Field + 'static> AvssParty<T> {
         poly.evaluate(&self.open_point[n - variable_num..].to_vec())
     }
 
-    pub fn interpolate_share(&self) -> (Vec<T>, T) {
+    pub fn interpolate_share(&self) -> Vec<T> {
         let poly = self.final_poly.as_ref().unwrap();
         let variable_num = poly.variable_num();
         let n = self.open_point.len();
         let opn = self.open_point[n - variable_num..].to_vec();
         let eva = poly.evaluate(&opn);
-        (opn, eva)
+        vec![opn[0], eva]
     }
 
     pub fn all_share(&self) -> MultilinearPolynomial<T>  {

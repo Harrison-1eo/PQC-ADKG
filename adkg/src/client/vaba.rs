@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use util::vec_check::{is_invector, is_subset};
 use super::gather::GatherNode;
-use crate::server::message::Message;
-use crate::server::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
+use crate::msg::message::Message;
+use crate::msg::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
 
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ impl VabaNode {
             set_sig: Vec::new(),
             set_indice: Vec::new(),
             set_fin: HashMap::new(),
-            gather: GatherNode::new(id, n-f, state),
+            gather: GatherNode::new(id, state, n, f),
             res: (0, 0),
             fin: false,
         }

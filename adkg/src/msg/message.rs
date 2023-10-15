@@ -1,3 +1,5 @@
+pub const AVSS_SEND_FIN: usize = 1;
+
 pub const ADKG_PROP: usize = 11;
 pub const ADKG_SIG: usize = 12;
 pub const VABA_ATTACH: usize = 21;
@@ -19,18 +21,6 @@ pub struct Message {
     pub additional: String,
 }
 
-impl Message {
-    pub fn new(id: usize) -> Message {
-        Message {
-            sender_id: id,
-            receiver_id: Vec::new(),
-            msg_type: 0,
-            msg_content: Vec::new(),
-            additional: String::new(),
-        }
-    }
-}
-
 impl std::fmt::Display for Message {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut receiver_id = String::new();
@@ -49,5 +39,43 @@ impl std::fmt::Display for Message {
 }
 
 impl Message {
-    
+    pub fn new(id: usize) -> Message {
+        Message {
+            sender_id: id,
+            receiver_id: Vec::new(),
+            msg_type: 0,
+            msg_content: Vec::new(),
+            additional: String::new(),
+        }
+    }
+
+    pub fn send_message_with_addi(id: usize, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>, addi: String) -> Message {
+        Message {
+            sender_id: id,
+            receiver_id: recv,
+            msg_type,
+            msg_content,
+            additional: addi,
+        }
+    }
+
+    pub fn send_message(id: usize, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+        Some(Message { 
+            sender_id: id,
+            receiver_id: recv,
+            msg_type,
+            msg_content,
+            additional: String::new(),
+        })
+    }
+
+    pub fn send_message2all(id: usize, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+        Some(Message { 
+            sender_id: id,
+            receiver_id: vec![],
+            msg_type,
+            msg_content,
+            additional: String::new(),
+        })
+    }
 }
