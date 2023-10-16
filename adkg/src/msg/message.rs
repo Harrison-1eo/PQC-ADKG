@@ -1,24 +1,51 @@
-pub const AVSS_SEND_FIN: usize = 1;
-
-pub const ADKG_PROP: usize = 11;
-pub const ADKG_SIG: usize = 12;
-pub const VABA_ATTACH: usize = 21;
-pub const VABA_SIG: usize = 22;
-pub const VABA_INDICE: usize = 23;
-pub const VABA_EVAL: usize = 24;
-pub const VABA_FIN: usize = 25;
-pub const GATHER_1: usize = 31;
-pub const GATHER_2: usize = 32;
-pub const GATHER_3: usize = 33;
-pub const GATHER_FIN: usize = 34;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MessageType {
+    NonType,
+    AvssSendFin,
+    AdkgProp,
+    AdkgSig,
+    VabaStart,
+    VabaSendFin,
+    VabaAttach,
+    VabaSig,
+    VabaIndice,
+    VabaEval,
+    VabaFin,
+    Gather1,
+    Gather2,
+    Gather3,
+    GatherFin,
+}
 
 #[derive(Clone, Debug)]
 pub struct Message {
     pub sender_id: usize,
     pub receiver_id: Vec<usize>,
-    pub msg_type: usize,
+    pub msg_type: MessageType,
     pub msg_content: Vec<usize>,
     pub additional: String,
+}
+
+impl std::fmt::Display for MessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MessageType::NonType => write!(f, "NON_TYPE"),
+            MessageType::AvssSendFin => write!(f, "AVSS_SEND_FIN"),
+            MessageType::AdkgProp => write!(f, "ADKG_PROP"),
+            MessageType::AdkgSig => write!(f, "ADKG_SIG"),
+            MessageType::VabaStart => write!(f, "VABA_START"),
+            MessageType::VabaSendFin => write!(f, "VABA_SEND_FIN"),
+            MessageType::VabaAttach => write!(f, "VABA_ATTACH"),
+            MessageType::VabaSig => write!(f, "VABA_SIG"),
+            MessageType::VabaIndice => write!(f, "VABA_INDICE"),
+            MessageType::VabaEval => write!(f, "VABA_EVAL"),
+            MessageType::VabaFin => write!(f, "VABA_FIN"),
+            MessageType::Gather1 => write!(f, "GATHER_1"),
+            MessageType::Gather2 => write!(f, "GATHER_2"),
+            MessageType::Gather3 => write!(f, "GATHER_3"),
+            MessageType::GatherFin => write!(f, "GATHER_FIN"),
+        }
+    }
 }
 
 impl std::fmt::Display for Message {
@@ -43,13 +70,13 @@ impl Message {
         Message {
             sender_id: id,
             receiver_id: Vec::new(),
-            msg_type: 0,
+            msg_type: MessageType::NonType,
             msg_content: Vec::new(),
             additional: String::new(),
         }
     }
 
-    pub fn send_message_with_addi(id: usize, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>, addi: String) -> Message {
+    pub fn send_message_with_addi(id: usize, recv: Vec<usize>, msg_type: MessageType, msg_content: Vec<usize>, addi: String) -> Message {
         Message {
             sender_id: id,
             receiver_id: recv,
@@ -59,7 +86,7 @@ impl Message {
         }
     }
 
-    pub fn send_message(id: usize, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+    pub fn send_message(id: usize, recv: Vec<usize>, msg_type: MessageType, msg_content: Vec<usize>) -> Option<Message>{
         Some(Message { 
             sender_id: id,
             receiver_id: recv,
@@ -69,7 +96,7 @@ impl Message {
         })
     }
 
-    pub fn send_message2all(id: usize, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+    pub fn send_message2all(id: usize, msg_type: MessageType, msg_content: Vec<usize>) -> Option<Message>{
         Some(Message { 
             sender_id: id,
             receiver_id: vec![],

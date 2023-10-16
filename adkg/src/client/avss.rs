@@ -10,7 +10,7 @@ use util::split_n;
 use util::{CODE_RATE, SECURITY_BITS};
 
 use crate::msg::message::Message;
-use crate::msg::message::AVSS_SEND_FIN;
+use crate::msg::message::MessageType;
 
 pub struct AvssNode{
     id: usize,
@@ -74,9 +74,9 @@ impl AvssNode {
         }
 
         // 输出折叠参数
-        for i in 0..folding_parameter.len() {
-            println!("{}: {:?}", i, folding_parameter[i]);
-        }
+        // for i in 0..folding_parameter.len() {
+        //     println!("{}: {:?}", i, folding_parameter[i]);
+        // }
 
         // parties 存储参与方，有 n^2 个参与方
         let mut parties = vec![];
@@ -94,7 +94,7 @@ impl AvssNode {
             ));
         }
 
-        let mut dealer = Dealer::new(
+        let dealer = Dealer::new(
             log_d - terminate_round,
             &polynomial,
             &interpolate_cosets,
@@ -113,7 +113,7 @@ impl AvssNode {
 
     }
     
-    pub fn send_and_verify(&mut self) -> Option<Message> {
+    pub fn send_and_verify(&mut self, msg_type: MessageType) -> Option<Message> {
         self.dealer.send_evaluations(&mut self.parties);
         self.dealer.commit_functions(&self.parties);
         self.dealer.prove();
@@ -134,7 +134,7 @@ impl AvssNode {
         
         assert!(self.parties[0].verify(&folding0, &function0));
 
-        Message::send_message2all(self.id, AVSS_SEND_FIN, vec![])
+        Message::send_message2all(self.id, msg_type, vec![])
     }
 
     pub fn shares(&self) -> Vec<Vec<Mersenne61Ext>> {
@@ -142,13 +142,51 @@ impl AvssNode {
         let n = 1 << self.log_n;
         for i in 0..n {
             shares.push(self.parties[i*n].interpolate_share());
+            // println!("shares {}: {:?}", i, shares[i])
         }
         shares
     }
 
-    pub fn reconstruct(&self) {
-        self.parties[0].all_share().evaluate_as_polynomial(Mersenne61Ext::from_int(0));
+    pub fn reconstruct(&self) -> Mersenne61Ext{
+        // let n = 1 << self.log_n;
+
+        // println!("{}", self.parties.len());
+        // for i in 0..self.parties.len() {
+        //     println!("reconstruct {}: {:?}", i, self.parties[i].all_share().evaluate_as_polynomial(Mersenne61Ext::from_int(0)));
+        // }
+        // println!(" ==================================== ");
+        
+        // for i in 0..n {
+        //     println!("reconstruct {}: {:?}", i, self.parties[i*n].all_share().evaluate_as_polynomial(Mersenne61Ext::from_int(0)));
+        // }
+
+        if self.parties[0].has_share() {
+            self.parties[0].all_share().evaluate_as_polynomial(Mersenne61Ext::from_int(0))
+        }else {
+            Mersenne61Ext::from_int(0)
+        }
+        
     }
     
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::AvssNode;
+    use crate::msg::message::MessageType;
+
+    #[test]
+    fn avss_log_print() {
+        let mut s = AvssNode::new(0, 3, 1);
+        let m = s.send_and_verify(MessageType::AvssSendFin);
+        println!("{}", m.unwrap());
+
+        let shares = s.shares();
+        println!("{:?}", shares);
+        let res = s.reconstruct();
+        println!("{}", res);
+
+    }
 }
 

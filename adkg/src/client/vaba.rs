@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use util::vec_check::{is_invector, is_subset};
 use super::gather::GatherNode;
 use crate::msg::message::Message;
-use crate::msg::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
+use crate::msg::message::MessageType;
 
 
 #[derive(Debug)]
@@ -42,7 +42,7 @@ impl VabaNode {
         }
     }
 
-    pub fn send_message(&self, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+    pub fn send_message(&self, recv: Vec<usize>, msg_type:MessageType , msg_content: Vec<usize>) -> Option<Message>{
         if self.state == 0 {
             return None
         }
@@ -66,7 +66,7 @@ impl VabaNode {
 
         if self.set_dealer.len() == self.f + 1 {
             self.set_attached = self.set_dealer.clone();
-            return self.send_message(vec![], VABA_ATTACH, self.set_attached.clone());
+            return self.send_message(vec![], MessageType::VabaAttach, self.set_attached.clone());
         }
         None
     }
@@ -78,7 +78,7 @@ impl VabaNode {
             return None
         }
 
-        let mut message = self.send_message(vec![msg.sender_id], VABA_SIG, msg.msg_content.clone()).unwrap();
+        let mut message = self.send_message(vec![msg.sender_id], MessageType::VabaSig, msg.msg_content.clone()).unwrap();
         message.additional = format!("The set of dealer is {:?}, which is SIGNATURED by {}", msg.msg_content, self.id);
         Some(message)
     }
@@ -116,7 +116,7 @@ impl VabaNode {
     /// 发送消息 <VABA_INDICE>，并将 set_indice 作为消息内容，待其他人对其进行验证
     pub fn handle_gather_fin(&mut self, msg: Message) -> Option<Message> {
         self.set_indice = msg.msg_content.clone();
-        self.send_message(vec![], VABA_INDICE, self.set_indice.clone())
+        self.send_message(vec![], MessageType::VabaIndice, self.set_indice.clone())
     }
 
     /// 收到其他人的验证消息 <VABA_INDICE> 后，调用 GatherVerify 进行验证
@@ -132,7 +132,7 @@ impl VabaNode {
                 for i in 0..self.secret.len() {
                     sum = sum.wrapping_add(self.secret[i].into());
                 }
-                return self.send_message(vec![], VABA_EVAL, vec![sum])
+                return self.send_message(vec![], MessageType::VabaEval, vec![sum])
             }
         }
         None
@@ -153,7 +153,7 @@ impl VabaNode {
         }
         if self.set_fin.len() == self.set_indice.len() {
             self.fin = true;
-            return self.send_message(vec![], VABA_FIN, vec![self.res.0, self.res.1]);
+            return self.send_message(vec![], MessageType::VabaFin, vec![self.res.0, self.res.1]);
             
         }
         None

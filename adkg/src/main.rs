@@ -32,12 +32,6 @@ fn run(n: usize, f: usize) {
             thread_id,
             tx_to_server: tx_to_server.clone(),
             rx_from_server: rx_to_thread,
-            client: Client::new(
-                thread_id, 
-                if i < n-f {1} else {0},
-                n,
-                f,
-            )
         });
     }
     print!("\n");
@@ -50,15 +44,24 @@ fn run(n: usize, f: usize) {
     });
 
     // 创建 n 个线程执行用户操作
-    for _ in 0..n {
-        let mut user = threads.pop().unwrap();
-        thread::spawn(move || {
+    for i in 0..n {
+        let user = threads.pop().unwrap();
+        thread::spawn( move || {
 
-            let message = user.client.start().unwrap();
+            let mut user_node = Client::new(
+                user.thread_id, 
+                if i < n-f {1} else {0},
+                n,
+                f,
+            );
+            
+            // 向服务器发送一条广播消息，开始协议
+            let message = user_node.start().unwrap();
             user.tx_to_server.send(message).unwrap();
 
+            // 等待服务器返回消息，处理消息，然后再向服务器发送消息
             while let Ok(msg) = user.rx_from_server.recv() {
-                let new_msg = user.client.handle_message(msg);
+                let new_msg = user_node.handle_message(msg);
                 match new_msg {
                     Some(m) =>{ 
                         println!("Thread {} send message to {:?}\n{}", user.thread_id, m.receiver_id, m);
@@ -72,4 +75,9 @@ fn run(n: usize, f: usize) {
 
     // 等待所有线程完成
     thread::sleep(std::time::Duration::from_secs(5));
+}
+
+fn main() {
+    // 运行协议，参数 `n` 为参与方总数量，`f` 为恶意参与方数量
+    run(4, 1);
 }

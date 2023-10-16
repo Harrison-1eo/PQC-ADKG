@@ -2,10 +2,9 @@ use rand::Rng;
 use sha256::digest;
 
 use util::vec_check::{is_invector, is_subset};
-use super::vaba::VabaNode;
 use crate::msg::result::Result;
 use crate::msg::message::Message;
-use crate::msg::message::{ADKG_PROP, ADKG_SIG};
+use crate::msg::message::MessageType;
 
 
 #[derive(Debug)]
@@ -19,7 +18,6 @@ pub struct AdkgNode {
     set_sig: Vec<(usize, Message)>,
     fin: bool,
     set_fin: Vec<usize>,
-    pub vaba: VabaNode,
     pub res: Option<Result>,
     
 }
@@ -36,13 +34,12 @@ impl AdkgNode {
             set_sig: Vec::new(),
             fin: false,
             set_fin: Vec::new(),
-            vaba: VabaNode::new(id, state, n, f),
             res: None,
         }
     }
 
-    pub fn send_message(&self, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
-        self.vaba.send_message(recv, msg_type, msg_content)
+    pub fn send_message(&self, recv: Vec<usize>, msg_type: MessageType, msg_content: Vec<usize>) -> Option<Message>{
+        Message::send_message(self.id, recv, msg_type, msg_content)
     }
 
     pub fn handle_share_fin(&mut self, id: usize) -> Option<Message> {
@@ -53,7 +50,7 @@ impl AdkgNode {
 
         if self.set_dealer.len() == self.f + 1 {
             self.set_prop = self.set_dealer.clone();
-            return self.send_message(vec![], ADKG_PROP, self.set_prop.clone());
+            return self.send_message(vec![], MessageType::AdkgProp, self.set_prop.clone());
         }
         None
     }
@@ -64,7 +61,7 @@ impl AdkgNode {
             return None
         }
 
-        let mut message = self.send_message(vec![msg.sender_id], ADKG_SIG, msg.msg_content.clone()).unwrap();
+        let mut message = self.send_message(vec![msg.sender_id], MessageType::AdkgSig, msg.msg_content.clone()).unwrap();
         message.additional = format!("The set of dealer is {:?}, which is SIGNATURED by {}", msg.msg_content, self.id);
         Some(message)
     }
@@ -91,9 +88,9 @@ impl AdkgNode {
             return None
         }
 
-        // if self.set_sig.len() == self.f + 1 {
-        //     return self.vaba.start();
-        // }
+        if self.set_sig.len() == self.f + 1 {
+            return self.send_message(vec![self.id], MessageType::VabaStart, self.set_prop.clone());
+        }
         None
     }
 

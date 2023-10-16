@@ -30,6 +30,10 @@ impl<T: Field + 'static> AvssParty<T> {
         vec![opn[0], eva]
     }
 
+    pub fn has_share(&self) -> bool {
+        self.final_poly.is_some()
+    }
+
     pub fn all_share(&self) -> MultilinearPolynomial<T>  {
         self.final_poly.as_ref().unwrap().clone()
     }

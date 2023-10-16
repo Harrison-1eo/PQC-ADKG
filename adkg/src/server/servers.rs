@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::mpsc;
 use crate::msg::message::Message;
-use crate::client::clients::Client;
+// use crate::client::clients::Client;
 
 pub struct BroadcastServer {
     pub n: usize,
@@ -13,7 +13,7 @@ pub struct UserThread{
     pub thread_id: usize,
     pub tx_to_server: mpsc::Sender<Message>,
     pub rx_from_server: mpsc::Receiver<Message>,
-    pub client: Client,
+    // pub client: Client,
 }
 
 impl BroadcastServer {
