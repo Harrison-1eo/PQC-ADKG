@@ -35,7 +35,7 @@ impl VabaNode {
             set_sig: Vec::new(),
             set_indice: Vec::new(),
             set_fin: HashMap::new(),
-            avss: AvssNode::new(id, 3, 1),
+            avss: AvssNode::new(id, log_2_n(n), 1),
             res: (0, 0),
             fin: false,
         }
@@ -187,6 +187,18 @@ impl VabaNode {
     }
 
     
+}
+
+
+/// 计算log2(n)
+fn log_2_n (n: usize) -> usize {
+    let mut i = 0;
+    let mut tmp = n;
+    while tmp > 1 {
+        tmp = tmp >> 1;
+        i += 1;
+    }
+    i+1
 }
 
 #[cfg(test)]

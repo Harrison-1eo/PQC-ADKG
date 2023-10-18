@@ -38,7 +38,7 @@ impl AdkgNode {
             fin: false,
             set_fin: Vec::new(),
             hash_fin: HashMap::new(),
-            avss: AvssNode::new(id, 3, 1),
+            avss: AvssNode::new(id, log_2_n(n), 1),
             res: None,
         }
     }
@@ -171,44 +171,34 @@ impl AdkgNode {
 
 }
 
+/// 计算log2(n)
+fn log_2_n (n: usize) -> usize {
+    let mut i = 0;
+    let mut tmp = n;
+    while tmp > 1 {
+        tmp = tmp >> 1;
+        i += 1;
+    }
+    i+1
+}
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
-    use sha256::digest;
-    use crate::msg::result::AdkgResult;
-    
-    fn sum_and_rec(id:usize, users:Vec<usize>) -> Option<AdkgResult> {
-        // 对 self.id 做SHA256运算
-        let sk = digest(id.to_string());
-        let mut pk = digest(0.to_string());
-        for &user in users.iter() {
-            let tmp = digest(user.to_string());
-            // pk = pk ^ tmp, pk is String type
-            pk = pk.chars().zip(tmp.chars()).map(|(a, b)| (a as u8 ^ b as u8) as char).collect::<String>();
+    fn log_2_n (n: usize) -> usize {
+        let mut i = 0;
+        let mut tmp = n;
+        while tmp > 1 {
+            tmp = tmp >> 1;
+            i += 1;
         }
-
-        Some(AdkgResult { 
-            id: id, 
-            users: users.clone(),
-            sk: sk.clone(),
-            pk: pk.clone(),
-        })
-
+        i
     }
+
 
     #[test]
     fn t() {
-        let mut users: Vec<usize> = Vec::new();
-        for i in 0..20 {
-            // 在0和1之间随机生成一个数
-            if rand::thread_rng().gen_range(0..2)==1 {
-                users.push(i);
-            }
-        }
-        for i in 0..20 {
-            let res = sum_and_rec(i, users.clone());
-            println!("{}", res.unwrap());
+        for i in 3..70 {
+            println!("{}: {}", i, log_2_n(i));
         }
     }
 }

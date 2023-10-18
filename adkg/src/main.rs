@@ -82,5 +82,5 @@ fn run(n: usize, f: usize) {
 
 fn main() {
     // 运行协议，参数 `n` 为参与方总数量，`f` 为恶意参与方数量
-    run(7, 2);
+    run(22, 7);
 }
