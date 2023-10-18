@@ -1,24 +1,25 @@
-use rand::Rng;
 use sha256::digest;
-
+use std::collections::HashMap;
 use util::vec_check::{is_invector, is_subset};
-use crate::msg::result::Result;
+use super::avss::AvssNode;
+use crate::msg::result::AdkgResult;
 use crate::msg::message::Message;
 use crate::msg::message::MessageType;
 
 
-#[derive(Debug)]
 pub struct AdkgNode {
     id: usize,
     state: usize,
+    n: usize,
     f: usize,
-    secret: Vec<usize>,
     set_dealer: Vec<usize>,
     set_prop: Vec<usize>,
     set_sig: Vec<(usize, Message)>,
+    hash_prop: HashMap<usize, Vec<usize>>,
     fin: bool,
     set_fin: Vec<usize>,
-    pub res: Option<Result>,
+    avss: AvssNode,
+    pub res: Option<AdkgResult>,
     
 }
 
@@ -27,19 +28,28 @@ impl AdkgNode {
         AdkgNode {
             id,
             state,
+            n,
             f,
-            secret: (0..n).map(|_| rand::thread_rng().gen_range(1..usize::MAX/n)).collect(),
             set_dealer: Vec::new(),
             set_prop: Vec::new(),
             set_sig: Vec::new(),
+            hash_prop: HashMap::new(),
             fin: false,
             set_fin: Vec::new(),
+            avss: AvssNode::new(id, 3, 1),
             res: None,
         }
     }
 
     pub fn send_message(&self, recv: Vec<usize>, msg_type: MessageType, msg_content: Vec<usize>) -> Option<Message>{
         Message::send_message(self.id, recv, msg_type, msg_content)
+    }
+
+    pub fn start(&mut self) -> Option<Message>{
+        if self.state == 0 {
+            return None
+        }
+        self.avss.send_and_verify(MessageType::AkdgAvssFin)
     }
 
     pub fn handle_share_fin(&mut self, id: usize) -> Option<Message> {
@@ -56,6 +66,10 @@ impl AdkgNode {
     }
 
     pub fn handle_prop(&mut self, msg: Message) -> Option<Message> {
+        if !self.hash_prop.contains_key(&msg.sender_id) {
+            self.hash_prop.insert(msg.sender_id, msg.msg_content.clone());
+        }
+
         // msg.msg_content 是自己的 set_dealer 集合的子集
         if !is_subset(&msg.msg_content, &self.set_dealer) {
             return None
@@ -94,30 +108,29 @@ impl AdkgNode {
         None
     }
 
-    pub fn handle_vaba_fin(&mut self, msg: Message) -> Option<Result>{
-        self.set_fin = msg.msg_content.clone();
+    pub fn handle_vaba_fin(&mut self, msg: Message) -> Option<AdkgResult>{
+        self.set_fin = self.hash_prop.get(&msg.msg_content[0]).unwrap().clone();
         self.fin = true;
 
         if is_invector(self.id, &self.set_fin) {
-            self.res = self.sum_and_rec(msg.msg_content.clone());
+            self.res = self.sum_and_rec(self.hash_prop.get(&msg.msg_content[0]).unwrap().clone());
         }
 
         self.res.clone()
     }
 
-    fn sum_and_rec(&self, users:Vec<usize>) -> Option<Result> {
+    fn sum_and_rec(&self, users:Vec<usize>) -> Option<AdkgResult> {
+        println!("sum_and_rec, {}, {:?}", self.id, users);
         // 对 self.id 做SHA256运算
         let sk = digest(self.id.to_string());
-        // 生成一个随机字符串
-        let ram = rand::thread_rng().gen_range(1..usize::MAX/1000).to_string();
-        let mut pk = digest(ram);
+        let mut pk = digest(0.to_string());
         for &user in users.iter() {
             let tmp = digest(user.to_string());
             // pk = pk ^ tmp, pk is String type
             pk = pk.chars().zip(tmp.chars()).map(|(a, b)| (a as u8 ^ b as u8) as char).collect::<String>();
         }
 
-        Some(Result { 
+        Some(AdkgResult { 
             id: self.id, 
             users: users.clone(),
             sk: sk.clone(),
@@ -132,9 +145,9 @@ impl AdkgNode {
 mod tests {
     use rand::Rng;
     use sha256::digest;
-    use crate::msg::result::Result;
+    use crate::msg::result::AdkgResult;
     
-    fn sum_and_rec(id:usize, users:Vec<usize>) -> Option<Result> {
+    fn sum_and_rec(id:usize, users:Vec<usize>) -> Option<AdkgResult> {
         // 对 self.id 做SHA256运算
         let sk = digest(id.to_string());
         let mut pk = digest(0.to_string());
@@ -144,7 +157,7 @@ mod tests {
             pk = pk.chars().zip(tmp.chars()).map(|(a, b)| (a as u8 ^ b as u8) as char).collect::<String>();
         }
 
-        Some(Result { 
+        Some(AdkgResult { 
             id: id, 
             users: users.clone(),
             sk: sk.clone(),

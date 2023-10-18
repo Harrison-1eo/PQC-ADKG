@@ -2,8 +2,8 @@ use std::thread;
 use std::sync::mpsc;
 use std::collections::HashMap;
 
-use multi_user::server::servers::{BroadcastServer, UserThread};
-use multi_user::client::clients::Client;
+use adkg::server::servers::{BroadcastServer, UserThread};
+use adkg::client::clients::Client;
 
 
 /// 运行协议，参数 `n` 为参与方总数量，`f` 为恶意参与方数量
@@ -54,17 +54,20 @@ fn run(n: usize, f: usize) {
                 n,
                 f,
             );
-            
+            print!("thread id: {}, state: {}\n", user.thread_id, user_node.state);
             // 向服务器发送一条广播消息，开始协议
-            let message = user_node.start().unwrap();
-            user.tx_to_server.send(message).unwrap();
-
+            let message = user_node.start();
+            match message {
+                Some(m) => user.tx_to_server.send(m).unwrap(),
+                None => ()
+            }
+            
             // 等待服务器返回消息，处理消息，然后再向服务器发送消息
             while let Ok(msg) = user.rx_from_server.recv() {
                 let new_msg = user_node.handle_message(msg);
                 match new_msg {
                     Some(m) =>{ 
-                        println!("Thread {} send message to {:?}\n{}", user.thread_id, m.receiver_id, m);
+                        // println!("Thread {} send message to {:?}\n{}", user.thread_id, m.receiver_id, m);
                         user.tx_to_server.send(m).unwrap()
                     }
                     None => (),

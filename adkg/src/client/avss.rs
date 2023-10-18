@@ -165,7 +165,10 @@ impl AvssNode {
         }else {
             Mersenne61Ext::from_int(0)
         }
-        
+    }
+
+    pub fn get_poly(&self) -> MultilinearPolynomial<Mersenne61Ext> {
+        self.polynomial.clone()
     }
     
 }
@@ -179,7 +182,7 @@ mod tests {
     #[test]
     fn avss_log_print() {
         let mut s = AvssNode::new(0, 3, 1);
-        let m = s.send_and_verify(MessageType::AvssSendFin);
+        let m = s.send_and_verify(MessageType::AkdgAvssFin);
         println!("{}", m.unwrap());
 
         let shares = s.shares();

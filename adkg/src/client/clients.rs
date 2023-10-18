@@ -1,9 +1,8 @@
 use super::vaba::VabaNode;
 use super::gather::GatherNode;
 use super::adkg::AdkgNode;
-use super::avss::AvssNode;
 use crate::msg::message::{Message, MessageType};
-
+use crate::msg::result::AdkgResult;
 
 pub struct Client{
     pub id: usize,
@@ -14,8 +13,6 @@ pub struct Client{
     gather: GatherNode,
     vaba: VabaNode,
     adkg: AdkgNode,
-    avss_adkg: AvssNode,
-    avss_vaba: AvssNode,
 }
 
 impl Client {
@@ -29,13 +26,15 @@ impl Client {
             gather: GatherNode::new(id, state, n, f),
             vaba: VabaNode::new(id, state, n, f),
             adkg: AdkgNode::new(id, state, n, f),
-            avss_adkg: AvssNode::new(id, 3, 1),
-            avss_vaba: AvssNode::new(id, 3, 1),
         }
     }
 
     pub fn start(&mut self) -> Option<Message> {
-        self.avss_adkg.send_and_verify(MessageType::AvssSendFin)
+        if self.state == 0 {
+            return None
+        }
+
+        self.adkg.start()
     }
 
     pub fn handle_message(&mut self, msg: Message) -> Option<Message> {
@@ -44,10 +43,10 @@ impl Client {
         }
 
         let message = match msg.msg_type {
-            MessageType::AvssSendFin   => self.adkg.handle_share_fin(msg.sender_id),
+            MessageType::AkdgAvssFin   => self.adkg.handle_share_fin(msg.sender_id),
             MessageType::AdkgProp      => self.adkg.handle_prop(msg),
             MessageType::AdkgSig       => self.adkg.handle_sig(msg),
-            MessageType::VabaSendFin   => self.vaba.handle_share_fin(msg.sender_id),
+            MessageType::VabaAvssFin   => self.vaba.handle_share_fin(msg.sender_id),
             MessageType::VabaAttach    => self.vaba.handle_attach(msg),
             MessageType::VabaSig       => self.vaba.handle_sig(msg),
             MessageType::VabaIndice    => self.vaba.handle_indice(msg),
@@ -60,16 +59,24 @@ impl Client {
 
         match message {
             Some(m) => {
+                println!("{}", m);
                 match m.msg_type {
                     MessageType::VabaStart => {
-                        self.avss_vaba.send_and_verify(MessageType::VabaSendFin)
+                        self.vaba.start()
+                    },
+                    MessageType::GatherStart => {
+                        self.gather.start()
                     },
                     MessageType::GatherFin => {
                         self.vaba.handle_gather_fin(m)
-                    }
+                    },
                     MessageType::VabaFin => {
-                        self.adkg.handle_vaba_fin(m);
-                        None
+                        let res = self.adkg.handle_vaba_fin(m);
+                        match res {
+                            Some(r) => {self.end(r);    None},
+                            None => None,                          
+                        }
+                        
                     },
                     _ => Some(m),
                 }
@@ -78,29 +85,12 @@ impl Client {
         }
     }
 
-    pub fn end(&mut self){
+    pub fn end(&mut self, res: AdkgResult){
         println!("Client {} end", self.id);
-        println!("find {} at max {}", self.vaba.res.0, self.vaba.res.1);
+        println!("{}", res);
     }
 
-    // pub fn gather_start(&self) -> Option<Message> {
-    //     if self.state == 0 {
-    //         return None
-    //     }
-    //     self.vaba.gather.send_message(MessageType::Gather1, vec![])
-    // }
 
-    // pub fn vaba_start(&mut self) -> Vec<Option<Message>> {
-    //     // 作为 dealer 分三次调用 BingoShare 分享n个秘密
-    //     // 对于其他参与者 j 发来的三次 BingoShare 请求都进行参与
-
-    //     // 如果完成了某个参与者三次的BingoShare 请求
-    //     let mut m: Vec<Option<Message>> = vec![];
-    //     for i in 0..self.n {
-    //         m.push(self.vaba.handle_share_fin(i).clone())
-    //     }
-    //     m
-    // }
 
 }
 
