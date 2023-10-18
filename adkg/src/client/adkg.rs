@@ -1,4 +1,4 @@
-use sha256::digest;
+// use sha256::digest;
 use std::collections::HashMap;
 use util::vec_check::{is_invector, is_subset};
 use super::avss::AvssNode;
@@ -14,10 +14,11 @@ pub struct AdkgNode {
     f: usize,
     set_dealer: Vec<usize>,
     set_prop: Vec<usize>,
-    set_sig: Vec<(usize, Message)>,
     hash_prop: HashMap<usize, Vec<usize>>,
+    set_sig: Vec<(usize, Message)>,
     fin: bool,
     set_fin: Vec<usize>,
+    hash_fin: HashMap<usize, u64>,
     avss: AvssNode,
     pub res: Option<AdkgResult>,
     
@@ -32,10 +33,11 @@ impl AdkgNode {
             f,
             set_dealer: Vec::new(),
             set_prop: Vec::new(),
-            set_sig: Vec::new(),
             hash_prop: HashMap::new(),
+            set_sig: Vec::new(),
             fin: false,
             set_fin: Vec::new(),
+            hash_fin: HashMap::new(),
             avss: AvssNode::new(id, 3, 1),
             res: None,
         }
@@ -108,36 +110,65 @@ impl AdkgNode {
         None
     }
 
-    pub fn handle_vaba_fin(&mut self, msg: Message) -> Option<AdkgResult>{
+    pub fn handle_vaba_fin(&mut self, msg: Message) -> Option<Message>{
+
         self.set_fin = self.hash_prop.get(&msg.msg_content[0]).unwrap().clone();
         self.fin = true;
-
         if is_invector(self.id, &self.set_fin) {
-            self.res = self.sum_and_rec(self.hash_prop.get(&msg.msg_content[0]).unwrap().clone());
+            return Some(Message::send_message_with_addi(
+                self.id, 
+                vec![], 
+                MessageType::SumAndRec,
+                vec![], 
+                self.avss.reconstruct().get_real().to_string().clone(),
+            ));
         }
-
-        self.res.clone()
+        None
     }
 
-    fn sum_and_rec(&self, users:Vec<usize>) -> Option<AdkgResult> {
-        println!("sum_and_rec, {}, {:?}", self.id, users);
-        // 对 self.id 做SHA256运算
-        let sk = digest(self.id.to_string());
-        let mut pk = digest(0.to_string());
-        for &user in users.iter() {
-            let tmp = digest(user.to_string());
-            // pk = pk ^ tmp, pk is String type
-            pk = pk.chars().zip(tmp.chars()).map(|(a, b)| (a as u8 ^ b as u8) as char).collect::<String>();
+    pub fn sum_and_rec(&mut self, msg: Message) -> Option<AdkgResult> {
+        if !is_invector(self.id, &self.set_fin) {
+            return None
         }
 
-        Some(AdkgResult { 
-            id: self.id, 
-            users: users.clone(),
-            sk: sk.clone(),
-            pk: pk.clone(),
-        })
-
+        self.hash_fin.insert(msg.sender_id, msg.additional.parse::<u64>().unwrap());
+        println!("sum_and_rec, {}, {:?}, {:?}", self.id, self.hash_fin.keys(),self.set_fin);
+        if self.hash_fin.len() == self.set_fin.len() {
+            let mut sum: u64 = 0;
+            for (_, &v) in self.hash_fin.iter() {
+                sum += v / 10;
+            }
+            return Some(AdkgResult {
+                id: self.id,
+                users: self.set_fin.clone(),
+                sk: self.avss.reconstruct().get_real().to_string().clone(),
+                pk: sum.to_string(),
+            })
+        }
+        None
     }
+
+    // fn sum_and_rec(&self, users:Vec<usize>) -> Option<AdkgResult> {
+    //     println!("sum_and_rec, {}, {:?}", self.id, users);
+    //     // 对 self.id 做SHA256运算
+    //     let sk = digest(self.id.to_string());
+    //     let mut pk = digest(0.to_string());
+    //     for &user in users.iter() {
+    //         let tmp = digest(user.to_string());
+    //         // pk = pk ^ tmp, pk is String type
+    //         pk = pk.chars().zip(tmp.chars()).map(|(a, b)| (a as u8 ^ b as u8) as char).collect::<String>();
+    //     }
+
+    //     Some(AdkgResult { 
+    //         id: self.id, 
+    //         users: users.clone(),
+    //         sk: sk.clone(),
+    //         pk: pk.clone(),
+    //     })
+
+    // }
+
+
 }
 
 

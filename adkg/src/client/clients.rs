@@ -54,30 +54,26 @@ impl Client {
             MessageType::Gather1       => self.gather.handle_gather_1(msg),
             MessageType::Gather2       => self.gather.handle_gather_2(msg),
             MessageType::Gather3       => self.gather.handle_gather_3(msg),
+            MessageType::SumAndRec     => {
+                let res = self.adkg.sum_and_rec(msg);
+                match res {
+                    Some(r) => self.end(r),
+                    None => (),
+                }
+                None
+            }
+            
             _ => None,
         };
 
         match message {
             Some(m) => {
-                println!("{}", m);
+                // println!("{}", m);
                 match m.msg_type {
-                    MessageType::VabaStart => {
-                        self.vaba.start()
-                    },
-                    MessageType::GatherStart => {
-                        self.gather.start()
-                    },
-                    MessageType::GatherFin => {
-                        self.vaba.handle_gather_fin(m)
-                    },
-                    MessageType::VabaFin => {
-                        let res = self.adkg.handle_vaba_fin(m);
-                        match res {
-                            Some(r) => {self.end(r);    None},
-                            None => None,                          
-                        }
-                        
-                    },
+                    MessageType::VabaStart      => self.vaba.start(),
+                    MessageType::GatherStart    => self.gather.start(),
+                    MessageType::GatherFin      => self.vaba.handle_gather_fin(m),
+                    MessageType::VabaFin        => self.adkg.handle_vaba_fin(m),
                     _ => Some(m),
                 }
             },

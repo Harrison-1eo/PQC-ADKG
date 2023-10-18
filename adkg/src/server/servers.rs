@@ -41,6 +41,7 @@ impl BroadcastServer {
     }
 
     pub fn send_msg(&self, msg: Message) {
+        println!("server send msg: {}", msg);
         let len = msg.receiver_id.len();
         if len == 0 {
             self.broadcast2all(msg);

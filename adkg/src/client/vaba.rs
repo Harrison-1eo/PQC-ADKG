@@ -1,7 +1,8 @@
-use rand::Rng;
+// use rand::Rng;
 use std::collections::HashMap;
 
 use util::vec_check::{is_invector, is_subset, is_equal};
+// use util::algebra::field::mersenne61_ext::Mersenne61Ext;
 use super::avss::AvssNode;
 use crate::msg::message::Message;
 use crate::msg::message::MessageType;
@@ -10,14 +11,14 @@ pub struct VabaNode {
     id: usize,
     state: usize,
     f: usize,
-    secret: Vec<usize>,
+    // secret: Vec<usize>,
     set_dealer: Vec<usize>,
     set_attached: Vec<usize>,
     set_sig: Vec<(usize, Message)>,
     set_indice: Vec<usize>,
-    set_fin: HashMap<usize, usize>,
+    set_fin: HashMap<usize, u64>,
     avss: AvssNode,
-    pub res: (usize, usize),
+    pub res: (usize, u64),
     fin: bool,
 }
 
@@ -28,7 +29,7 @@ impl VabaNode {
             id,
             state,
             f,
-            secret: (0..n).map(|_| rand::thread_rng().gen_range(1..usize::MAX/n)).collect(),
+            // secret: (0..n).map(|_| rand::thread_rng().gen_range(1..usize::MAX/n)).collect(),
             set_dealer: Vec::new(),
             set_attached: Vec::new(),
             set_sig: Vec::new(),
@@ -44,13 +45,7 @@ impl VabaNode {
         if self.state == 0 {
             return None
         }
-        // Some(Message { 
-        //     sender_id: self.id,
-        //     receiver_id: recv,
-        //     msg_type: msg_type,
-        //     msg_content: msg_content.clone(),
-        //     additional: String::new(),
-        // })
+
         Message::send_message(self.id, recv, msg_type, msg_content)
     }
 
@@ -136,12 +131,21 @@ impl VabaNode {
             if msg.msg_content.contains(&self.id) {
                 // 调用 BingoReconstructSum 并输出结果
                 // 计算 self.secret 的和
-                let mut sum: usize = 0;
-                for i in 0..self.secret.len() {
-                    sum = sum.wrapping_add(self.secret[i].into());
-                }
+                // let mut sum: usize = 0;
+                // for i in 0..self.secret.len() {
+                //     sum = sum.wrapping_add(self.secret[i].into());
+                // }
+
+                let secret = self.avss.reconstruct().get_real().to_string();
                 
-                return self.send_message(vec![], MessageType::VabaEval, vec![sum])
+                // return self.send_message(vec![], MessageType::VabaEval, vec![sum])
+                return Some(Message::send_message_with_addi(
+                    self.id, 
+                    vec![], 
+                    MessageType::VabaEval, 
+                    vec![], 
+                    secret.clone()
+                ))
             }
         }
         None
@@ -155,15 +159,22 @@ impl VabaNode {
             return None
         }
         if self.set_indice.contains(&msg.sender_id){
-            self.set_fin.insert(msg.sender_id, msg.msg_content[0]);
-            let s = msg.msg_content[0];
+            let s = msg.additional.parse::<u64>().unwrap();
+            self.set_fin.insert(msg.sender_id, s);
             if s > self.res.1 {
                 self.res = (msg.sender_id, s);
             }
         }
         if self.set_fin.len() == self.set_indice.len() {
             self.fin = true;
-            return self.send_message(vec![], MessageType::VabaFin, vec![self.res.0, self.res.1]);
+            // return self.send_message(vec![], MessageType::VabaFin, vec![self.res.0]);
+            return Some(Message::send_message_with_addi(
+                self.id, 
+                vec![], 
+                MessageType::VabaFin, 
+                vec![self.res.0], 
+                msg.additional.clone()
+            ))
         }
         else {
             print!("vaba.handle_eval: id: {}, self.set_fin: {:?}, self.set_indice: {:?}\n", self.id, self.set_fin.keys(), self.set_indice);

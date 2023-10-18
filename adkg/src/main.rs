@@ -18,8 +18,6 @@ fn run(n: usize, f: usize) {
         tx_to_threads: HashMap::new(),
     };
 
-    // 创建 n-f 个正常用户，这些用户的 thread_id 为 0..n-f
-    // 创建 f 个恶意用户，这些用户的 thread_id 为 n-f..n
     for i in 0..n {
         print!(" {} ", i);
         let thread_id = i;
@@ -73,6 +71,8 @@ fn run(n: usize, f: usize) {
                     None => (),
                 }
             }
+
+            println!("Thread {} finished", user.thread_id);
         });
     }
 
@@ -82,5 +82,5 @@ fn run(n: usize, f: usize) {
 
 fn main() {
     // 运行协议，参数 `n` 为参与方总数量，`f` 为恶意参与方数量
-    run(4, 1);
+    run(7, 2);
 }

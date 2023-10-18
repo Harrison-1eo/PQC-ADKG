@@ -16,6 +16,7 @@ pub enum MessageType {
     Gather2,
     Gather3,
     GatherFin,
+    SumAndRec,
 }
 
 #[derive(Clone, Debug)]
@@ -46,6 +47,7 @@ impl std::fmt::Display for MessageType {
             MessageType::Gather2 => write!(f, "GATHER_2"),
             MessageType::Gather3 => write!(f, "GATHER_3"),
             MessageType::GatherFin => write!(f, "GATHER_FIN"),
+            MessageType::SumAndRec => write!(f, "SUM_AND_REC"),
         }
     }
 }
