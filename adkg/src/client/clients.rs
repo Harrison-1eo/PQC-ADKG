@@ -3,6 +3,7 @@ use super::gather::GatherNode;
 use super::adkg::AdkgNode;
 use crate::msg::message::{Message, MessageType};
 use crate::msg::result::AdkgResult;
+use std::time::Instant;
 
 pub struct Client{
     pub id: usize,
@@ -13,6 +14,7 @@ pub struct Client{
     gather: GatherNode,
     vaba: VabaNode,
     adkg: AdkgNode,
+    start_time: Instant,
 }
 
 impl Client {
@@ -26,6 +28,7 @@ impl Client {
             gather: GatherNode::new(id, state, n, f),
             vaba: VabaNode::new(id, state, n, f),
             adkg: AdkgNode::new(id, state, n, f),
+            start_time: std::time::Instant::now(),
         }
     }
 
@@ -85,6 +88,8 @@ impl Client {
         // println!("Client {} end", self.id);
         // println!("{}", res);
         println!("client_id:{} status:GET_SK_PK sk:{} pk:{}", self.id, res.sk, res.pk);
+        //结束进程
+        println!("{}", self.start_time.elapsed().as_millis());
     }
 
 
