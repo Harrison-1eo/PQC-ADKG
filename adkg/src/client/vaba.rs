@@ -1,25 +1,24 @@
-use rand::Rng;
+// use rand::Rng;
 use std::collections::HashMap;
 
-use util::vec_check::{is_invector, is_subset};
-use super::gather::GatherNode;
-use crate::server::message::Message;
-use crate::server::message::{VABA_ATTACH, VABA_SIG, VABA_INDICE, VABA_EVAL, VABA_FIN};
+use util::vec_check::{is_invector, is_subset, is_equal};
+// use util::algebra::field::mersenne61_ext::Mersenne61Ext;
+use super::avss::AvssNode;
+use crate::msg::message::Message;
+use crate::msg::message::MessageType;
 
-
-#[derive(Debug)]
 pub struct VabaNode {
     id: usize,
     state: usize,
     f: usize,
-    secret: Vec<usize>,
+    // secret: Vec<usize>,
     set_dealer: Vec<usize>,
     set_attached: Vec<usize>,
     set_sig: Vec<(usize, Message)>,
     set_indice: Vec<usize>,
-    set_fin: HashMap<usize, usize>,
-    pub gather: GatherNode,
-    pub res: (usize, usize),
+    set_fin: HashMap<usize, u64>,
+    avss: AvssNode,
+    pub res: (usize, u64),
     fin: bool,
 }
 
@@ -30,29 +29,32 @@ impl VabaNode {
             id,
             state,
             f,
-            secret: (0..n).map(|_| rand::thread_rng().gen_range(1..usize::MAX/n)).collect(),
+            // secret: (0..n).map(|_| rand::thread_rng().gen_range(1..usize::MAX/n)).collect(),
             set_dealer: Vec::new(),
             set_attached: Vec::new(),
             set_sig: Vec::new(),
             set_indice: Vec::new(),
             set_fin: HashMap::new(),
-            gather: GatherNode::new(id, n-f, state),
+            avss: AvssNode::new(id, log_2_n(n), 1),
             res: (0, 0),
             fin: false,
         }
     }
 
-    pub fn send_message(&self, recv: Vec<usize>, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+    pub fn send_message(&self, recv: Vec<usize>, msg_type:MessageType , msg_content: Vec<usize>) -> Option<Message>{
         if self.state == 0 {
             return None
         }
-        Some(Message { 
-            sender_id: self.id,
-            receiver_id: recv,
-            msg_type: msg_type,
-            msg_content: msg_content.clone(),
-            additional: String::new(),
-        })
+
+        Message::send_message(self.id, recv, msg_type, msg_content)
+    }
+
+    pub fn start(&mut self) -> Option<Message>{
+        if self.state == 0 {
+            return None
+        }
+        println!("client_id:{} status:VABA_SHARE_FIN", self.id);
+        self.avss.send_and_verify(MessageType::VabaAvssFin)
     }
     
     /// 作为 Dealer 进行秘密分享，当完成其他参与者的 Share 过程时，将其添加到 set_dealer 中
@@ -66,7 +68,7 @@ impl VabaNode {
 
         if self.set_dealer.len() == self.f + 1 {
             self.set_attached = self.set_dealer.clone();
-            return self.send_message(vec![], VABA_ATTACH, self.set_attached.clone());
+            return self.send_message(vec![], MessageType::VabaAttach, self.set_attached.clone());
         }
         None
     }
@@ -78,7 +80,7 @@ impl VabaNode {
             return None
         }
 
-        let mut message = self.send_message(vec![msg.sender_id], VABA_SIG, msg.msg_content.clone()).unwrap();
+        let mut message = self.send_message(vec![msg.sender_id], MessageType::VabaSig, msg.msg_content.clone()).unwrap();
         message.additional = format!("The set of dealer is {:?}, which is SIGNATURED by {}", msg.msg_content, self.id);
         Some(message)
     }
@@ -89,6 +91,7 @@ impl VabaNode {
         if msg.msg_content.len() == 0 || self.set_attached.len() == 0 {
             return None
         }
+        let msg_content = msg.msg_content.clone();
         let number =  msg.additional.chars().rev().take_while(|c| c.is_digit(10))
                                                     .collect::<String>().chars().rev()
                                                     .collect::<String>().parse::<usize>();
@@ -107,7 +110,8 @@ impl VabaNode {
         }
 
         if self.set_sig.len() == self.f + 1 {
-            return self.gather.start();
+            println!("client_id:{} status:VABA_SIG_ENOUGH set:{:?}", self.id, self.set_attached);
+            return self.send_message(vec![self.id], MessageType::GatherStart, msg_content);
         }
         None
     }
@@ -116,7 +120,8 @@ impl VabaNode {
     /// 发送消息 <VABA_INDICE>，并将 set_indice 作为消息内容，待其他人对其进行验证
     pub fn handle_gather_fin(&mut self, msg: Message) -> Option<Message> {
         self.set_indice = msg.msg_content.clone();
-        self.send_message(vec![], VABA_INDICE, self.set_indice.clone())
+        println!("client_id:{} status:GATHER_FIN set:{:?}", self.id, self.set_indice);
+        self.send_message(vec![], MessageType::VabaIndice, self.set_indice.clone())
     }
 
     /// 收到其他人的验证消息 <VABA_INDICE> 后，调用 GatherVerify 进行验证
@@ -124,15 +129,25 @@ impl VabaNode {
     /// 这里进行模拟，随机产生BingoReconstructSum 结果
     pub fn handle_indice(&mut self, msg: Message) -> Option<Message> {
         // 调用 GatherVerify 进行验证
-        if self.gather.verify(msg.msg_content.clone()) {
+        if self.verify_indice(msg.msg_content.clone()) {
             if msg.msg_content.contains(&self.id) {
                 // 调用 BingoReconstructSum 并输出结果
                 // 计算 self.secret 的和
-                let mut sum: usize = 0;
-                for i in 0..self.secret.len() {
-                    sum = sum.wrapping_add(self.secret[i].into());
-                }
-                return self.send_message(vec![], VABA_EVAL, vec![sum])
+                // let mut sum: usize = 0;
+                // for i in 0..self.secret.len() {
+                //     sum = sum.wrapping_add(self.secret[i].into());
+                // }
+
+                let secret = self.avss.reconstruct().get_real().to_string();
+                
+                // return self.send_message(vec![], MessageType::VabaEval, vec![sum])
+                return Some(Message::send_message_with_addi(
+                    self.id, 
+                    vec![], 
+                    MessageType::VabaEval, 
+                    vec![], 
+                    secret.clone()
+                ))
             }
         }
         None
@@ -140,26 +155,52 @@ impl VabaNode {
 
     /// 如果收到消息 <VABA_EVAL>，则将其添加到 set_fin 中
     /// 如果 set_indice 中的参与者都已经重构出秘密，则将 set_fin 中的最大值作为结果，通过消息 <VABA_FIN> 发送
+    /// 消息中包含最大值的参与者 id 和最大值
     pub fn handle_eval(&mut self, msg: Message) -> Option<Message> {
         if self.fin {
             return None
         }
         if self.set_indice.contains(&msg.sender_id){
-            self.set_fin.insert(msg.sender_id, msg.msg_content[0]);
-            let s = msg.msg_content[0];
+            let s = msg.additional.parse::<u64>().unwrap();
+            self.set_fin.insert(msg.sender_id, s);
             if s > self.res.1 {
                 self.res = (msg.sender_id, s);
             }
         }
         if self.set_fin.len() == self.set_indice.len() {
             self.fin = true;
-            return self.send_message(vec![], VABA_FIN, vec![self.res.0, self.res.1]);
-            
+            println!("client_id:{} status:VABA_FIN select:{}", self.id, self.res.0);
+            return Some(Message::send_message_with_addi(
+                self.id, 
+                vec![], 
+                MessageType::VabaFin, 
+                vec![self.res.0], 
+                msg.additional.clone()
+            ))
         }
+        // else {
+            // print!("vaba.handle_eval: id: {}, self.set_fin: {:?}, self.set_indice: {:?}\n", self.id, self.set_fin.keys(), self.set_indice);
+        // }
         None
     }
 
+    pub fn verify_indice(&self, indice: Vec<usize>) -> bool {
+        is_equal(&indice, &self.set_indice)
+    }
+
     
+}
+
+
+/// 计算log2(n)
+fn log_2_n (n: usize) -> usize {
+    let mut i = 0;
+    let mut tmp = n;
+    while tmp > 1 {
+        tmp = tmp >> 1;
+        i += 1;
+    }
+    i+1
 }
 
 #[cfg(test)]

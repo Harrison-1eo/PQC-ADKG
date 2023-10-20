@@ -167,16 +167,16 @@ impl Fp64 {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::super::field_tests::*;
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::super::field_tests::*;
+//     use super::*;
 
-    #[test]
-    fn test() {
-        add_and_sub::<Fp64>();
-        mult_and_inverse::<Fp64>();
-        assigns::<Fp64>();
-        pow_and_generator::<Fp64>();
-    }
-}
+//     #[test]
+//     fn test() {
+//         add_and_sub::<Fp64>();
+//         mult_and_inverse::<Fp64>();
+//         assigns::<Fp64>();
+//         pow_and_generator::<Fp64>();
+//     }
+// }

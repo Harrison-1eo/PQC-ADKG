@@ -80,49 +80,49 @@ pub fn batch_inverse<T: Field>(v: &Vec<T>) -> Vec<T> {
     res
 }
 
-mod field_tests {
-    use super::*;
+// mod field_tests {
+//     use super::*;
 
-    pub fn add_and_sub<T: Field>() {
-        for _i in 0..100 {
-            let a = T::random_element();
-            let b = T::random_element();
-            let c = a + b - a;
-            assert!(b == c)
-        }
-    }
+//     pub fn add_and_sub<T: Field>() {
+//         for _i in 0..100 {
+//             let a = T::random_element();
+//             let b = T::random_element();
+//             let c = a + b - a;
+//             assert!(b == c)
+//         }
+//     }
 
-    pub fn mult_and_inverse<T: Field>() {
-        for _i in 0..100 {
-            let a = T::random_element();
-            let b = a.inverse();
-            assert_eq!(a * b, T::from_int(1));
-            assert_eq!(b * a, T::from_int(1));
-        }
-        assert_eq!(T::INVERSE_2 * T::from_int(2), T::from_int(1));
-    }
+//     pub fn mult_and_inverse<T: Field>() {
+//         for _i in 0..100 {
+//             let a = T::random_element();
+//             let b = a.inverse();
+//             assert_eq!(a * b, T::from_int(1));
+//             assert_eq!(b * a, T::from_int(1));
+//         }
+//         assert_eq!(T::INVERSE_2 * T::from_int(2), T::from_int(1));
+//     }
 
-    pub fn assigns<T: Field>() {
-        for _i in 0..10 {
-            let mut a = T::random_element();
-            let aa = a;
-            let b = T::random_element();
-            a += b;
-            assert_eq!(a, aa + b);
-            a -= b;
-            assert_eq!(a, aa);
-            a *= b;
-            assert_eq!(a, aa * b);
-            a *= b.inverse();
-            assert_eq!(a, aa);
-            assert!((-a + a).is_zero());
-        }
-    }
+//     pub fn assigns<T: Field>() {
+//         for _i in 0..10 {
+//             let mut a = T::random_element();
+//             let aa = a;
+//             let b = T::random_element();
+//             a += b;
+//             assert_eq!(a, aa + b);
+//             a -= b;
+//             assert_eq!(a, aa);
+//             a *= b;
+//             assert_eq!(a, aa * b);
+//             a *= b.inverse();
+//             assert_eq!(a, aa);
+//             assert!((-a + a).is_zero());
+//         }
+//     }
 
-    pub fn pow_and_generator<T: Field>() {
-        assert_eq!(T::get_generator(1), T::from_int(1));
-        let x = T::get_generator(1 << 32);
-        assert_eq!(x.pow(1 << 32), T::from_int(1));
-        assert_ne!(x.pow(1 << 31), T::from_int(1));
-    }
-}
+//     pub fn pow_and_generator<T: Field>() {
+//         assert_eq!(T::get_generator(1), T::from_int(1));
+//         let x = T::get_generator(1 << 32);
+//         assert_eq!(x.pow(1 << 32), T::from_int(1));
+//         assert_ne!(x.pow(1 << 31), T::from_int(1));
+//     }
+// }

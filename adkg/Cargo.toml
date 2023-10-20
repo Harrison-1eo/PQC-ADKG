@@ -1,10 +1,11 @@
 [package]
-name = "multi_user"
+name = "adkg"
 version = "0.1.0"
 edition = "2021"
 
 
 [dependencies]
+avss = { path = "../avss" }
 util = { path = "../util" }
 rand = "0.8.5"
 sha256 = "1.4.0"

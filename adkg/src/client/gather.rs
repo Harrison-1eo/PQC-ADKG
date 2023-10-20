@@ -1,6 +1,6 @@
 use util::vec_check::{is_invector, is_subset, is_equal};
-use crate::server::message::{Message};
-use crate::server::message::{GATHER_1, GATHER_2, GATHER_3, GATHER_FIN};
+use crate::msg::message::{Message, MessageType};
+
 
 use std::collections::HashMap;
 
@@ -19,10 +19,10 @@ pub struct GatherNode {
 }
 
 impl GatherNode {
-    pub fn new(id: usize, n_f: usize, state: usize) -> GatherNode {
+    pub fn new(id: usize, state: usize, n: usize, f: usize) -> GatherNode {
         GatherNode {
             id,
-            n_f,
+            n_f: n-f,
             state,
             set_r: Vec::new(),
             set_s: Vec::new(),
@@ -37,10 +37,10 @@ impl GatherNode {
         if self.state == 0 {
             return None
         }
-        self.send_message(GATHER_1, vec![])
+        self.send_message(MessageType::Gather1, vec![])
     }
 
-    pub fn send_message(&self, msg_type: usize, msg_content: Vec<usize>) -> Option<Message>{
+    pub fn send_message(&self, msg_type: MessageType, msg_content: Vec<usize>) -> Option<Message>{
         if self.state == 0 {
             return None
         }
@@ -63,7 +63,7 @@ impl GatherNode {
         }
 
         if self.set_s.len() >= self.n_f {
-            self.send_message(GATHER_2, self.set_s.clone())
+            self.send_message(MessageType::Gather2, self.set_s.clone())
         }else {
             None
         }
@@ -80,7 +80,7 @@ impl GatherNode {
         }
 
         if self.set_t.len() >= self.n_f {
-            self.send_message(GATHER_3, self.set_t.clone())
+            self.send_message(MessageType::Gather3, self.set_t.clone())
         }else {
             None
         }
@@ -108,7 +108,7 @@ impl GatherNode {
                 return None
             }
             self.fin = true;
-            self.send_message(GATHER_FIN, self.set_s.clone())
+            self.send_message(MessageType::GatherFin, self.set_s.clone())
         }else {
             None
         }
