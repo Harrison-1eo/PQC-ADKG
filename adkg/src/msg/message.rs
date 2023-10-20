@@ -1,7 +1,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MessageType {
     NonType,
-    AkdgAvssFin,
+    AdkgAvssFin,
     AdkgProp,
     AdkgSig,
     VabaStart,
@@ -32,7 +32,7 @@ impl std::fmt::Display for MessageType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MessageType::NonType => write!(f, "NON_TYPE"),
-            MessageType::AkdgAvssFin => write!(f, "AVSS_SEND_FIN"),
+            MessageType::AdkgAvssFin => write!(f, "AVSS_SEND_FIN"),
             MessageType::AdkgProp => write!(f, "ADKG_PROP"),
             MessageType::AdkgSig => write!(f, "ADKG_SIG"),
             MessageType::VabaStart => write!(f, "VABA_START"),

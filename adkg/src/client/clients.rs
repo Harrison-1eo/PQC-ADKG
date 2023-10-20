@@ -43,7 +43,7 @@ impl Client {
         }
 
         let message = match msg.msg_type {
-            MessageType::AkdgAvssFin   => self.adkg.handle_share_fin(msg.sender_id),
+            MessageType::AdkgAvssFin   => self.adkg.handle_share_fin(msg.sender_id),
             MessageType::AdkgProp      => self.adkg.handle_prop(msg),
             MessageType::AdkgSig       => self.adkg.handle_sig(msg),
             MessageType::VabaAvssFin   => self.vaba.handle_share_fin(msg.sender_id),
@@ -82,8 +82,9 @@ impl Client {
     }
 
     pub fn end(&mut self, res: AdkgResult){
-        println!("Client {} end", self.id);
-        println!("{}", res);
+        // println!("Client {} end", self.id);
+        // println!("{}", res);
+        println!("client_id:{} status:GET_SK_PK sk:{} pk:{}", self.id, res.sk, res.pk);
     }
 
 

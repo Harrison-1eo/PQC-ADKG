@@ -51,7 +51,8 @@ impl AdkgNode {
         if self.state == 0 {
             return None
         }
-        self.avss.send_and_verify(MessageType::AkdgAvssFin)
+        println!("client_id:{} status:ADKG_SHARE_FIN", self.id);
+        self.avss.send_and_verify(MessageType::AdkgAvssFin)
     }
 
     pub fn handle_share_fin(&mut self, id: usize) -> Option<Message> {
@@ -105,6 +106,7 @@ impl AdkgNode {
         }
 
         if self.set_sig.len() == self.f + 1 {
+            println!("client_id:{} status:ADKG_SIG_ENOUGH set:{:?}", self.id, self.set_prop);
             return self.send_message(vec![self.id], MessageType::VabaStart, self.set_prop.clone());
         }
         None
@@ -114,29 +116,25 @@ impl AdkgNode {
 
         self.set_fin = self.hash_prop.get(&msg.msg_content[0]).unwrap().clone();
         self.fin = true;
-        if is_invector(self.id, &self.set_fin) {
-            return Some(Message::send_message_with_addi(
-                self.id, 
-                vec![], 
-                MessageType::SumAndRec,
-                vec![], 
-                self.avss.reconstruct().get_real().to_string().clone(),
-            ));
-        }
-        None
+        println!("client_id:{} status:ADKG_FIN set:{:?}", self.id, self.set_fin);
+        return Some(Message::send_message_with_addi(
+            self.id, 
+            vec![], 
+            MessageType::SumAndRec,
+            vec![], 
+            self.avss.sum_and_rec(self.set_fin.clone()).get_real().to_string().clone(),
+        ));
     }
 
     pub fn sum_and_rec(&mut self, msg: Message) -> Option<AdkgResult> {
-        if !is_invector(self.id, &self.set_fin) {
-            return None
-        }
 
         self.hash_fin.insert(msg.sender_id, msg.additional.parse::<u64>().unwrap());
-        println!("sum_and_rec, {}, {:?}, {:?}", self.id, self.hash_fin.keys(),self.set_fin);
-        if self.hash_fin.len() == self.set_fin.len() {
+        // println!("sum_and_rec, {}, {:?}, {:?}", self.id, self.hash_fin.keys(),self.set_fin);
+        let n_f: u64 = (self.n - self.f) as u64; 
+        if self.hash_fin.len() == self.n - self.f {
             let mut sum: u64 = 0;
             for (_, &v) in self.hash_fin.iter() {
-                sum += v / 10;
+                sum += v / n_f;
             }
             return Some(AdkgResult {
                 id: self.id,
@@ -147,26 +145,6 @@ impl AdkgNode {
         }
         None
     }
-
-    // fn sum_and_rec(&self, users:Vec<usize>) -> Option<AdkgResult> {
-    //     println!("sum_and_rec, {}, {:?}", self.id, users);
-    //     // 对 self.id 做SHA256运算
-    //     let sk = digest(self.id.to_string());
-    //     let mut pk = digest(0.to_string());
-    //     for &user in users.iter() {
-    //         let tmp = digest(user.to_string());
-    //         // pk = pk ^ tmp, pk is String type
-    //         pk = pk.chars().zip(tmp.chars()).map(|(a, b)| (a as u8 ^ b as u8) as char).collect::<String>();
-    //     }
-
-    //     Some(AdkgResult { 
-    //         id: self.id, 
-    //         users: users.clone(),
-    //         sk: sk.clone(),
-    //         pk: pk.clone(),
-    //     })
-
-    // }
 
 
 }
@@ -179,7 +157,11 @@ fn log_2_n (n: usize) -> usize {
         tmp = tmp >> 1;
         i += 1;
     }
-    i+1
+    if 1<<i == n {
+        i
+    } else {
+        i+1
+    }
 }
 
 #[cfg(test)]
@@ -191,7 +173,11 @@ mod tests {
             tmp = tmp >> 1;
             i += 1;
         }
-        i
+        if 1<<i == n {
+            i
+        } else {
+            i+1
+        }
     }
 
 

@@ -147,6 +147,14 @@ impl AvssNode {
         shares
     }
 
+    pub fn sum_and_rec(&self, dealers: Vec<usize>) -> Mersenne61Ext{
+        let mut sum = Mersenne61Ext::from_int(0);
+        for i in 0..dealers.len() {
+            sum += self.parties[dealers[i]].share();
+        }
+        sum
+    } 
+
     pub fn reconstruct(&self) -> Mersenne61Ext{
         // let n = 1 << self.log_n;
 
@@ -182,11 +190,12 @@ mod tests {
     #[test]
     fn avss_log_print() {
         let mut s = AvssNode::new(0, 3, 1);
-        let m = s.send_and_verify(MessageType::AkdgAvssFin);
+        let m = s.send_and_verify(MessageType::AdkgAvssFin);
         println!("{}", m.unwrap());
 
         let shares = s.shares();
         println!("{:?}", shares);
+        println!("{}", shares.len());
         let res = s.reconstruct();
         println!("{}", res);
 

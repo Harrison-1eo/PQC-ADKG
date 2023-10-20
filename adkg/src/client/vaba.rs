@@ -53,6 +53,7 @@ impl VabaNode {
         if self.state == 0 {
             return None
         }
+        println!("client_id:{} status:VABA_SHARE_FIN", self.id);
         self.avss.send_and_verify(MessageType::VabaAvssFin)
     }
     
@@ -109,7 +110,7 @@ impl VabaNode {
         }
 
         if self.set_sig.len() == self.f + 1 {
-            // return self.gather.start();
+            println!("client_id:{} status:VABA_SIG_ENOUGH set:{:?}", self.id, self.set_attached);
             return self.send_message(vec![self.id], MessageType::GatherStart, msg_content);
         }
         None
@@ -119,6 +120,7 @@ impl VabaNode {
     /// 发送消息 <VABA_INDICE>，并将 set_indice 作为消息内容，待其他人对其进行验证
     pub fn handle_gather_fin(&mut self, msg: Message) -> Option<Message> {
         self.set_indice = msg.msg_content.clone();
+        println!("client_id:{} status:GATHER_FIN set:{:?}", self.id, self.set_indice);
         self.send_message(vec![], MessageType::VabaIndice, self.set_indice.clone())
     }
 
@@ -167,7 +169,7 @@ impl VabaNode {
         }
         if self.set_fin.len() == self.set_indice.len() {
             self.fin = true;
-            // return self.send_message(vec![], MessageType::VabaFin, vec![self.res.0]);
+            println!("client_id:{} status:VABA_FIN select:{}", self.id, self.res.0);
             return Some(Message::send_message_with_addi(
                 self.id, 
                 vec![], 
@@ -176,9 +178,9 @@ impl VabaNode {
                 msg.additional.clone()
             ))
         }
-        else {
-            print!("vaba.handle_eval: id: {}, self.set_fin: {:?}, self.set_indice: {:?}\n", self.id, self.set_fin.keys(), self.set_indice);
-        }
+        // else {
+            // print!("vaba.handle_eval: id: {}, self.set_fin: {:?}, self.set_indice: {:?}\n", self.id, self.set_fin.keys(), self.set_indice);
+        // }
         None
     }
 
